@@ -1,0 +1,40 @@
+<div class="container py-8">
+  <div style="max-width: 500px; margin: 0 auto;">
+    <div style="background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Sign up</h2>
+
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div class="mb-4">
+          <%= f.label :username, style: "display: block; font-weight: 500; margin-bottom: 0.5rem;" %>
+          <%= f.text_field :username, autofocus: true, autocomplete: "username", style: "width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" %>
+        </div>
+
+        <div class="mb-4">
+          <%= f.label :email, style: "display: block; font-weight: 500; margin-bottom: 0.5rem;" %>
+          <%= f.email_field :email, autocomplete: "email", style: "width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" %>
+        </div>
+
+        <div class="mb-4">
+          <%= f.label :password, style: "display: block; font-weight: 500; margin-bottom: 0.5rem;" %>
+          <% if @minimum_password_length %>
+            <em style="font-size: 0.875rem; color: #6b7280;">(<%= @minimum_password_length %> characters minimum)</em>
+          <% end %>
+          <%= f.password_field :password, autocomplete: "new-password", style: "width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-top: 0.25rem;" %>
+        </div>
+
+        <div class="mb-4">
+          <%= f.label :password_confirmation, style: "display: block; font-weight: 500; margin-bottom: 0.5rem;" %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", style: "width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" %>
+        </div>
+
+        <div class="mb-4">
+          <%= f.submit "Sign up", class: "btn-buy" %>
+        </div>
+      <% end %>
+
+      <%= render "devise/shared/links" %>
+    </div>
+  </div>
+</div>
