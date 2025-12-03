@@ -1,0 +1,34 @@
+<% return if package.nil? %>
+
+<div class="package-card">
+  <div class="package-header">
+    <h3><%= package.name %></h3>
+    <div class="package-price">
+      <%= number_to_currency(package.price_usd) %>
+    </div>
+    <p class="package-payment-method">Pay with Bitcoin</p>
+  </div>
+
+  <div class="package-body">
+    <div class="mb-4">
+      <div class="package-credits">
+        <%= package.credits %>
+        <span class="package-credits-label">credits</span>
+      </div>
+      <p class="package-per-credit">
+        <%= number_to_currency(price_per_credit(package), precision: 2) %> per credit
+      </p>
+    </div>
+
+    <% if package.description.present? %>
+      <p class="package-description">
+        <%= package.description %>
+      </p>
+    <% end %>
+
+    <%= button_to "Buy Now", credit_purchases_path(credit_package_id: package.id),
+        method: :post,
+        class: "btn-buy",
+        data: { turbo: false } %>
+  </div>
+</div>

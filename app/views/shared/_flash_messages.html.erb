@@ -1,9 +1,8 @@
 <% if flash.any? %>
   <div class="container">
     <% flash.each do |type, message| %>
-      <div class="flash flash-<%= type %>" role="alert">
-        <%= message %>
-      </div>
+      <% variant = type == 'notice' ? 'success' : (type == 'alert' ? 'error' : type) %>
+      <%= render 'components/alert', variant: variant, message: message %>
     <% end %>
   </div>
 <% end %>

@@ -1,66 +1,24 @@
 <div class="container py-8">
   <div class="mb-8">
-    <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">Buy Credits</h1>
-    <p style="color: #6b7280;">Choose a credit package and pay securely with Bitcoin</p>
+    <h1>Buy Credits</h1>
+    <p>Choose a credit package and pay securely with Bitcoin</p>
   </div>
 
   <% if current_user.user_credit_wallet %>
-    <div class="wallet-card">
-      <p class="wallet-header">Your Current Balance</p>
-      <p class="wallet-amount">
-        <%= current_user.user_credit_wallet.total_credits - current_user.user_credit_wallet.locked_credits %>
-        <span style="font-size: 1rem; font-weight: normal;">available credits</span>
-      </p>
-      <% if current_user.user_credit_wallet.locked_credits > 0 %>
-        <p style="font-size: 0.875rem; color: #2563eb; margin-top: 0.25rem;">
-          (<%= current_user.user_credit_wallet.locked_credits %> credits locked)
-        </p>
-      <% end %>
-    </div>
+    <%= render 'components/wallet_card', wallet: current_user.user_credit_wallet %>
   <% end %>
 
   <div class="packages-grid">
     <% @credit_packages.each do |package| %>
-      <div class="package-card">
-        <div class="package-header">
-          <h3><%= package.name %></h3>
-          <div class="package-price">
-            <%= number_to_currency(package.price_usd) %>
-          </div>
-          <p style="color: #bfdbfe; font-size: 0.875rem;">Pay with Bitcoin</p>
-        </div>
-
-        <div class="package-body">
-          <div class="mb-4">
-            <div class="package-credits">
-              <%= package.credits %>
-              <span style="font-size: 1rem; font-weight: normal; color: #6b7280;">credits</span>
-            </div>
-            <p style="font-size: 0.875rem; color: #9ca3af;">
-              <%= number_to_currency(package.price_usd / package.credits, precision: 2) %> per credit
-            </p>
-          </div>
-
-          <% if package.description.present? %>
-            <p class="package-description">
-              <%= package.description %>
-            </p>
-          <% end %>
-
-          <%= button_to "Buy Now", credit_purchases_path(credit_package_id: package.id),
-              method: :post,
-              class: "btn-buy",
-              data: { turbo: false } %>
-        </div>
-      </div>
+      <%= render 'components/package_card', package: package %>
     <% end %>
   </div>
 
   <% if current_user.btc_transactions.any? %>
     <div class="mt-8">
-      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Recent Transactions</h2>
-      <div style="background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
-        <table>
+      <h2>Recent Transactions</h2>
+      <div class="table-container">
+        <table class="table">
           <thead>
             <tr>
               <th>Date</th>
@@ -77,9 +35,7 @@
                 <td><%= transaction.credit_package.name %></td>
                 <td><%= number_to_currency(transaction.credit_package.price_usd) %></td>
                 <td>
-                  <span class="status-badge status-<%= transaction.status %>">
-                    <%= transaction.status.titleize %>
-                  </span>
+                  <%= render 'components/status_badge', status: transaction.status %>
                 </td>
                 <td>
                   <%= link_to "View", credit_purchase_path(transaction), class: "link" %>

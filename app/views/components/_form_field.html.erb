@@ -1,0 +1,42 @@
+<%
+  type ||= 'text'
+  label ||= field.to_s.humanize
+  placeholder ||= nil
+  helper ||= nil
+  error ||= nil
+  html_class ||= ''
+  required ||= false
+  input_class = form_input_classes(type: type, html_class: html_class)
+%>
+
+<div class="form-group">
+  <% if type == 'checkbox' %>
+    <div class="flex items-center gap-2">
+      <%= form.check_box field, class: input_class, required: required %>
+      <%= form.label field, label, style: "margin-bottom: 0;" %>
+    </div>
+  <% else %>
+    <%= form.label field, label, class: "form-label" %>
+
+    <% case type %>
+    <% when 'email' %>
+      <%= form.email_field field, class: input_class, placeholder: placeholder, required: required %>
+    <% when 'password' %>
+      <%= form.password_field field, class: input_class, placeholder: placeholder, required: required %>
+    <% when 'textarea' %>
+      <%= form.text_area field, class: input_class, placeholder: placeholder, required: required, rows: 4 %>
+    <% when 'select' %>
+      <%= form.select field, options, {}, class: 'form-select', required: required %>
+    <% else %>
+      <%= form.text_field field, class: input_class, placeholder: placeholder, required: required %>
+    <% end %>
+  <% end %>
+
+  <% if helper.present? %>
+    <p class="form-helper"><%= helper %></p>
+  <% end %>
+
+  <% if error.present? %>
+    <p class="form-error"><%= error %></p>
+  <% end %>
+</div>

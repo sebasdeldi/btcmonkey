@@ -1,0 +1,49 @@
+/**
+ * CONTAINERS & SECTIONS
+ * Layout containers and section spacing
+ */
+
+.container {
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  padding: 0 var(--space-12);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+}
+
+.section {
+  padding: var(--space-20) 0;
+}
+
+.section-sm {
+  padding: var(--space-12) 0;
+}
+
+.section-lg {
+  padding: var(--space-32) 0;
+}
+
+/* Auth containers */
+.auth-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: var(--space-8) 0;
+}
+
+.auth-card {
+  background-color: var(--color-primary-white);
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.auth-card h2 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-6);
+  color: var(--color-primary-navy);
+}

@@ -1,0 +1,7 @@
+<%
+  status ||= 'pending'
+  html_class ||= ''
+  classes = status_badge_classes(status, html_class: html_class)
+%>
+
+<span class="<%= classes %>"><%= status.titleize %></span>

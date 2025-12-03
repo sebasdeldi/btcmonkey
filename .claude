@@ -1,0 +1,265 @@
+# BTC Play — Claude Project Context
+
+## 1. Project Overview
+
+BTC Play is a **Rails 8** application where users purchase credits via **BTC payments** using **BTCPay Server**.
+Architecture follows clean separation between:
+
+* **Clients** (`app/clients`) → external API communication
+* **Services** (`app/services`) → business logic + orchestration
+* **Controllers** → thin wrappers calling services
+* **Models** → data + validations
+* **Views** → components + helpers, no business logic
+* **Helpers** → view logic extraction and design system support
+
+## 2. Tech Stack
+
+* Ruby 3.1.3
+* Rails 8
+* PostgreSQL
+* Devise
+* HTTParty
+* BTCPay Server
+* Custom design system (Bannerbear-inspired)
+
+---
+
+# 3. Architecture Rules Claude Must Follow
+
+## 3.1 General Principles
+
+* **No business logic in controllers or views**.
+* **Services handle everything transactional**.
+* **Clients encapsulate all external HTTP calls**.
+* **Views always use components and helpers**.
+* **Use Rails conventions whenever possible**.
+* Always maintain **idempotency** in webhook logic.
+* Keep code small, expressive, and conventional.
+
+## 3.2 Service Objects Pattern
+
+Every new service must follow:
+
+```ruby
+class MyService
+  attr_reader :errors
+
+  def initialize(params)
+    @params = params
+    @errors = []
+  end
+
+  def call
+    ActiveRecord::Base.transaction do
+      # logic
+    end
+    success?
+  end
+
+  def success?
+    @errors.empty?
+  end
+end
+```
+
+Rules:
+
+* Use `ActiveRecord::Base.transaction`.
+* Use `raise ActiveRecord::Rollback` on failure.
+* Push errors into `@errors`.
+* Return booleans (`success?`).
+
+## 3.3 Client Pattern
+
+All API clients follow:
+
+```ruby
+class ExternalServiceClient
+  include HTTParty
+
+  class Error < StandardError; end
+  class ApiError < Error; end
+
+  def initialize
+    validate_configuration!
+  end
+end
+```
+
+Rules:
+
+* Include HTTParty.
+* Raise `ApiError` for failed responses.
+* Always validate configuration.
+* Return simple Ruby hashes with symbol keys.
+
+---
+
+# 4. Domain Modules
+
+## Clients (`app/clients`)
+
+### BtcPayServerClient
+
+* Creates invoices
+* Retrieves invoice status
+* Raises `Error` / `ApiError`
+
+## Services (`app/services`)
+
+### UserRegistrationService
+
+* Creates User and UserCreditWallet atomically.
+
+### CreditPurchaseService
+
+* Validates credit package
+* Creates BtcTransaction
+* Calls BTCPay to create invoice
+* Saves invoice data
+* Returns checkout link
+
+### CreditWalletService
+
+* `add_credits`
+* `lock_credits`
+* `unlock_credits`
+* `deduct_credits`
+  All operations transactional.
+
+### BtcPayWebhookHandlerService
+
+* Idempotent processing
+* Retrieves invoice from BTCPay
+* Updates BtcTransaction state
+* Calls CreditWalletService
+
+---
+
+# 5. Models
+
+* **User** (Devise)
+* **UserCreditWallet**
+* **CreditPackage**
+* **BtcTransaction** (enum: pending, paid, confirmed, expired, failed)
+
+Associations:
+
+* User → one wallet
+* User → many BtcTransactions
+* BtcTransaction → user, credit_package
+
+---
+
+# 6. Design System & Views
+
+## Rules for Claude:
+
+* **NEVER write logic in views** → always use helpers or components.
+* **Components live in** `app/views/components`.
+* **Component CSS lives in** `app/assets/stylesheets/components/`.
+
+## Helper functions include:
+
+* `button_classes`
+* `badge_classes`
+* `status_badge_classes`
+* `form_input_classes`
+* `available_credits(wallet)`
+* `price_per_credit(package)`
+
+## Design tokens (`design_tokens.css`)
+
+* Navy/Blue palette
+* 4px spacing
+* Typography scale
+* Radius/shadow tokens
+
+---
+
+# 7. Data Flow: Credit Purchase (High-Level)
+
+1. User selects package
+2. `CreditPurchasesController#create`
+3. Calls `CreditPurchaseService`
+4. Service creates pending transaction
+5. Service calls BTCPay client
+6. Invoice created → transaction updated
+7. Redirect user to checkout link
+8. User pays
+9. BTCPay sends webhook
+10. Webhook hits controller → handler service
+11. Handler fetches invoice status
+12. Updates transaction
+13. Adds credits to wallet
+
+---
+
+# 8. Environment Variables
+
+Used in `.env`:
+
+```
+BTCPAY_SERVER_URL=
+BTCPAY_API_KEY=
+BTCPAY_STORE_ID=
+APP_HOST= # used for BTCPay callbacks
+```
+
+---
+
+# 9. Common Instructions Claude Should Follow
+
+## When writing Rails:
+
+* 2-space indentation
+* Descriptive method/variable names
+* Keep methods short and intention-revealing
+* Use symbolized hash keys
+* Use strong params in controllers
+* Services handle persistence logic, not controllers
+
+## When writing components:
+
+* Always include matching CSS file
+* Use design tokens
+* Keep markup minimal
+* No inline styles
+* No business logic in ERB
+
+## When modifying files:
+
+* Prefer **minimal diffs** unless user asks for full file
+* If creating multiple files, show each with clear headings
+
+## When explaining:
+
+* Keep explanations short unless asked otherwise
+* Put most detail into the code, not the prose
+
+---
+
+# 10. Testing Strategy
+
+## Services
+
+* Test happy path + error paths
+* Test transaction rollbacks
+* Mock external clients
+* Validate returned structures
+
+## Clients
+
+* Mock external HTTP calls (WebMock/VCR)
+* Test error handling
+* Test config validation
+
+## Models
+
+* Validations
+* Associations
+* Scopes
+
+---
+
+# END

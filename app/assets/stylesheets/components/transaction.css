@@ -1,0 +1,102 @@
+/**
+ * TRANSACTION
+ * Transaction card and detail styles
+ */
+
+.transaction-card {
+  background-color: var(--color-primary-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin: var(--space-8) 0;
+}
+
+.transaction-header {
+  background: linear-gradient(135deg, var(--color-primary-blue), var(--color-primary-blue-dark));
+  color: var(--color-primary-white);
+  padding: var(--space-6);
+}
+
+.transaction-header h2 {
+  color: var(--color-primary-white);
+  margin-bottom: 0;
+}
+
+.transaction-body {
+  padding: var(--space-6);
+}
+
+.transaction-details {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.transaction-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.transaction-detail-label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+}
+
+.transaction-detail-value {
+  color: var(--color-gray-900);
+  font-size: var(--font-size-sm);
+}
+
+/* Transaction detail page */
+.transaction-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.transaction-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.section-divider {
+  border-top: 1px solid var(--color-gray-200);
+  padding-top: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-4);
+  color: var(--color-gray-900);
+}
+
+.detail-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code-block {
+  display: block;
+  background-color: var(--color-gray-100);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  word-break: break-all;
+  font-family: monospace;
+}
+
+/* List styles */
+.list-disc {
+  list-style-type: disc;
+}

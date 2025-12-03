@@ -1,0 +1,82 @@
+/**
+ * BADGES & TAGS
+ * Badge and tag component styles
+ *
+ * Matches:
+ *   - app/views/components/_badge.html.erb
+ *   - app/views/components/_tag.html.erb
+ *   - app/views/components/_status_badge.html.erb
+ */
+
+/* Standard Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background-color: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.badge-success {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.badge-warning {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.badge-error {
+  background-color: var(--color-error-light);
+  color: var(--color-error-dark);
+}
+
+.badge-gray {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Status Badges (Transaction Status) */
+.status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.status-pending {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.status-paid,
+.status-confirmed {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.status-expired,
+.status-failed {
+  background-color: var(--color-error-light);
+  color: var(--color-error-dark);
+}

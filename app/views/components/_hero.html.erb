@@ -1,0 +1,56 @@
+<%
+  # Hero Section Component
+  #
+  # Parameters:
+  #   title: Hero title (required)
+  #   subtitle: Hero subtitle (optional)
+  #   primary_cta_text: Primary button text (optional)
+  #   primary_cta_url: Primary button URL (optional)
+  #   secondary_cta_text: Secondary button text (optional)
+  #   secondary_cta_url: Secondary button URL (optional)
+  #   html_class: additional CSS classes
+  #
+  # Examples:
+  #   <%= render 'components/hero',
+  #       title: 'Welcome to BTC Play',
+  #       subtitle: 'Buy credits with Bitcoin',
+  #       primary_cta_text: 'Get Started',
+  #       primary_cta_url: new_user_registration_path %>
+
+  title ||= ''
+  subtitle ||= nil
+  primary_cta_text ||= nil
+  primary_cta_url ||= nil
+  secondary_cta_text ||= nil
+  secondary_cta_url ||= nil
+  html_class ||= ''
+
+  css_classes = ['hero']
+  css_classes << html_class if html_class.present?
+
+  classes = css_classes.join(' ')
+%>
+
+<section class="<%= classes %>">
+  <div class="container">
+    <h1 class="hero-title"><%= title %></h1>
+
+    <% if subtitle.present? %>
+      <p class="hero-subtitle"><%= subtitle %></p>
+    <% end %>
+
+    <% if primary_cta_text.present? || secondary_cta_text.present? %>
+      <div class="hero-cta">
+        <% if primary_cta_text.present? && primary_cta_url.present? %>
+          <%= link_to primary_cta_text, primary_cta_url, class: "btn btn-primary btn-lg" %>
+        <% end %>
+
+        <% if secondary_cta_text.present? && secondary_cta_url.present? %>
+          <%= link_to secondary_cta_text, secondary_cta_url, class: "btn btn-secondary btn-lg" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= yield if block_given? %>
+  </div>
+</section>

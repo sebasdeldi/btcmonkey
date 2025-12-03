@@ -1,0 +1,8 @@
+<%
+  text ||= ''
+  variant ||= 'primary'
+  html_class ||= ''
+  classes = badge_classes(variant: variant, html_class: html_class)
+%>
+
+<span class="<%= classes %>"><%= text %></span>

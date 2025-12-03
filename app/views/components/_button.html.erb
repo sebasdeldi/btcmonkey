@@ -1,0 +1,20 @@
+<%
+  variant ||= 'primary'
+  size ||= 'base'
+  full ||= false
+  type ||= 'button'
+  html_class ||= ''
+  classes = button_classes(variant: variant, size: size, full: full, html_class: html_class)
+%>
+
+<% if defined?(url) && url.present? %>
+  <%= link_to text, url,
+      class: classes,
+      method: defined?(method) ? method : :get,
+      data: defined?(data) ? data : {} %>
+<% else %>
+  <%= button_tag text,
+      type: type,
+      class: classes,
+      data: defined?(data) ? data : {} %>
+<% end %>

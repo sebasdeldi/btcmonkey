@@ -1,6 +1,6 @@
-# Service for integrating with BTCPay Server API to process Bitcoin payments.
+# Client for integrating with BTCPay Server API to process Bitcoin payments.
 #
-# This service handles all communication with the BTCPay Server API, including:
+# This client handles all communication with the BTCPay Server API, including:
 # - Creating Bitcoin invoices for credit package purchases
 # - Retrieving invoice status and payment details
 # - Extracting Bitcoin addresses and amounts from API responses
@@ -9,14 +9,14 @@
 # that allows accepting Bitcoin payments without third-party intermediaries.
 #
 # Configuration:
-# This service requires three environment variables to be set:
+# This client requires three environment variables to be set:
 # - BTCPAY_SERVER_URL: The base URL of your BTCPay Server instance
 # - BTCPAY_API_KEY: Your BTCPay Server API key (generate in Store Settings > Access Tokens)
 # - BTCPAY_STORE_ID: Your BTCPay Server store ID
 #
 # @example Creating an invoice
-#   service = BtcPayServerService.new
-#   invoice = service.create_invoice(
+#   client = BtcPayServerClient.new
+#   invoice = client.create_invoice(
 #     amount_usd: 19.00,
 #     order_id: 123,
 #     buyer_email: 'user@example.com'
@@ -24,29 +24,29 @@
 #   # => { invoice_id: "abc123", btc_address: "bc1q...", expected_btc: 0.0005, checkout_link: "https://..." }
 #
 # @example Retrieving invoice status
-#   service = BtcPayServerService.new
-#   invoice = service.get_invoice("abc123")
+#   client = BtcPayServerClient.new
+#   invoice = client.get_invoice("abc123")
 #   # => { status: "Settled", btc_address: "bc1q...", expected_btc: 0.0005, received_btc: 0.0005 }
 #
 # @example Handling configuration errors
 #   # If environment variables are missing:
-#   service = BtcPayServerService.new
-#   # => BtcPayServerService::Error: BTCPay Server is not configured. Missing environment variables: BTCPAY_SERVER_URL, BTCPAY_API_KEY
+#   client = BtcPayServerClient.new
+#   # => BtcPayServerClient::Error: BTCPay Server is not configured. Missing environment variables: BTCPAY_SERVER_URL, BTCPAY_API_KEY
 #
 # @example Handling API errors
-#   service.create_invoice(amount_usd: -10, order_id: 1)
-#   # => BtcPayServerService::ApiError: Client error (400): Invalid amount
+#   client.create_invoice(amount_usd: -10, order_id: 1)
+#   # => BtcPayServerClient::ApiError: Client error (400): Invalid amount
 #
-class BtcPayServerService
+class BtcPayServerClient
   include HTTParty
 
-  # Base error class for all BTCPay Server service errors.
+  # Base error class for all BTCPay Server client errors.
   class Error < StandardError; end
 
   # Raised when BTCPay Server API returns an error response.
   class ApiError < Error; end
 
-  # Initialize the BTCPay Server service.
+  # Initialize the BTCPay Server client.
   #
   # Loads configuration from environment variables and validates that all
   # required settings are present. Sets the base URI for HTTParty requests.

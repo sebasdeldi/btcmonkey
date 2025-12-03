@@ -1,9 +1,9 @@
 <% if user_signed_in? && current_user.user_credit_wallet %>
-  <div class="wallet-card" style="display: flex; align-items: center; justify-content: space-between;">
+  <div class="wallet-card flex items-center justify-between">
     <div>
       <p class="wallet-header">Available Credits</p>
       <p class="wallet-amount">
-        <%= current_user.user_credit_wallet.total_credits - current_user.user_credit_wallet.locked_credits %>
+        <%= available_credits(current_user.user_credit_wallet) %>
       </p>
     </div>
     <%= link_to "Buy More", credit_purchases_path, class: "btn btn-primary" %>

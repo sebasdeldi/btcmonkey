@@ -1,0 +1,32 @@
+<%
+  # Alert Component
+  #
+  # Parameters:
+  #   message: Alert message (required)
+  #   variant: 'success', 'warning', 'error', 'info' (default: 'info')
+  #   dismissible: true/false - adds close button (default: false)
+  #   html_class: additional CSS classes
+  #
+  # Examples:
+  #   <%= render 'components/alert', message: 'Success!', variant: 'success' %>
+  #   <%= render 'components/alert', message: 'Warning!', variant: 'warning', dismissible: true %>
+
+  message ||= ''
+  variant ||= 'info'
+  dismissible ||= false
+  html_class ||= ''
+
+  css_classes = ['alert', "alert-#{variant}"]
+  css_classes << html_class if html_class.present?
+
+  classes = css_classes.join(' ')
+%>
+
+<div class="<%= classes %>" role="alert">
+  <%= message %>
+  <%= yield if block_given? %>
+
+  <% if dismissible %>
+    <button type="button" class="alert-close" aria-label="Close">×</button>
+  <% end %>
+</div>

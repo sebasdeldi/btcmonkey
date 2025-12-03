@@ -1,0 +1,97 @@
+<%
+  # Card Component
+  #
+  # Parameters:
+  #   title: Card title (optional)
+  #   header_content: Custom header content (optional, use block with header: true)
+  #   footer_content: Custom footer content (optional, use block with footer: true)
+  #   hoverable: true/false - adds hover effect (default: false)
+  #   html_class: additional CSS classes
+  #
+  # Examples:
+  #   <%= render 'components/card', title: 'Card Title' do %>
+  #     Card body content
+  #   <% end %>
+  #
+  #   <%= render 'components/card', hoverable: true do |card| %>
+  #     <% card.header do %>
+  #       <h3>Custom Header</h3>
+  #     <% end %>
+  #     <% card.body do %>
+  #       Body content
+  #     <% end %>
+  #     <% card.footer do %>
+  #       Footer content
+  #     <% end %>
+  #   <% end %>
+
+  hoverable ||= false
+  html_class ||= ''
+
+  css_classes = ['card']
+  css_classes << 'card-hover' if hoverable
+  css_classes << html_class if html_class.present?
+
+  classes = css_classes.join(' ')
+
+  # Create a simple struct to handle header/body/footer blocks
+  card_sections = Struct.new(:header_html, :body_html, :footer_html).new('', '', '')
+%>
+
+<% if block_given? %>
+  <%
+    # Capture the block with the card sections struct
+    card_builder = Object.new
+    def card_builder.header(&block)
+      @header_block = block
+    end
+    def card_builder.body(&block)
+      @body_block = block
+    end
+    def card_builder.footer(&block)
+      @footer_block = block
+    end
+    def card_builder.header_block; @header_block; end
+    def card_builder.body_block; @body_block; end
+    def card_builder.footer_block; @footer_block; end
+
+    # Execute the block to capture sections
+    capture { yield card_builder }
+
+    # Capture each section
+    header_html = card_builder.header_block ? capture(&card_builder.header_block) : nil
+    body_html = card_builder.body_block ? capture(&card_builder.body_block) : capture { yield }
+    footer_html = card_builder.footer_block ? capture(&card_builder.footer_block) : nil
+  %>
+
+  <div class="<%= classes %>">
+    <% if defined?(title) && title.present? || header_html.present? %>
+      <div class="card-header">
+        <%= title if defined?(title) && title.present? %>
+        <%= header_html if header_html.present? %>
+      </div>
+    <% end %>
+
+    <div class="card-body">
+      <%= body_html %>
+    </div>
+
+    <% if footer_html.present? %>
+      <div class="card-footer">
+        <%= footer_html %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="<%= classes %>">
+    <% if defined?(title) && title.present? %>
+      <div class="card-header">
+        <%= title %>
+      </div>
+    <% end %>
+
+    <div class="card-body">
+      <!-- Empty card -->
+    </div>
+  </div>
+<% end %>

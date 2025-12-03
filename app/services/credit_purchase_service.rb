@@ -123,9 +123,9 @@ class CreditPurchaseService
   # @return [void]
   # @raise [ActiveRecord::Rollback] if BTCPay Server API call fails
   def create_btcpay_invoice
-    btcpay_service = BtcPayServerService.new
+    btcpay_client = BtcPayServerClient.new
 
-    invoice_data = btcpay_service.create_invoice(
+    invoice_data = btcpay_client.create_invoice(
       amount_usd: @credit_package.price_usd,
       order_id: @transaction.id,
       buyer_email: @user.email
@@ -138,10 +138,10 @@ class CreditPurchaseService
     )
 
     @checkout_link = invoice_data[:checkout_link]
-  rescue BtcPayServerService::Error => e
+  rescue BtcPayServerClient::Error => e
     @errors << e.message
     raise ActiveRecord::Rollback
-  rescue BtcPayServerService::ApiError => e
+  rescue BtcPayServerClient::ApiError => e
     @errors << "Payment provider error: #{e.message}"
     raise ActiveRecord::Rollback
   end

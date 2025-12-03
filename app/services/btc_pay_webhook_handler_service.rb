@@ -191,14 +191,14 @@ class BtcPayWebhookHandlerService
   # @return [void]
   # @raise [ActiveRecord::Rollback] if BTCPay Server API call fails
   def update_transaction_from_webhook(transaction)
-    btcpay_service = BtcPayServerService.new
-    invoice_data = btcpay_service.get_invoice(invoice_id)
+    btcpay_client = BtcPayServerClient.new
+    invoice_data = btcpay_client.get_invoice(invoice_id)
 
     transaction.update!(
       received_btc: invoice_data[:received_btc],
       status: map_btcpay_status(invoice_data[:status])
     )
-  rescue BtcPayServerService::ApiError => e
+  rescue BtcPayServerClient::ApiError => e
     @errors << "Failed to fetch invoice data: #{e.message}"
     raise ActiveRecord::Rollback
   end

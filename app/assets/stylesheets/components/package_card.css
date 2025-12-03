@@ -1,0 +1,80 @@
+/**
+ * PACKAGE CARD
+ * Credit package card component styles
+ *
+ * Matches: app/views/components/_package_card.html.erb
+ */
+
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-6);
+  margin: var(--space-8) 0;
+}
+
+.package-card {
+  background-color: var(--color-primary-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: var(--transition-slow);
+  border: 1px solid var(--color-gray-200);
+}
+
+.package-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: var(--color-primary-blue);
+}
+
+.package-header {
+  background: linear-gradient(135deg, var(--color-primary-blue), var(--color-primary-blue-dark));
+  color: var(--color-primary-white);
+  padding: var(--space-6);
+}
+
+.package-header h3 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-2);
+  color: var(--color-primary-white);
+}
+
+.package-price {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.package-payment-method {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--font-size-sm);
+}
+
+.package-body {
+  padding: var(--space-6);
+}
+
+.package-credits {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-navy);
+  margin-bottom: var(--space-2);
+}
+
+.package-credits-label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-gray-600);
+}
+
+.package-per-credit {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-400);
+}
+
+.package-description {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-6);
+  min-height: 40px;
+  line-height: var(--line-height-relaxed);
+}

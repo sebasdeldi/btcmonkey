@@ -1,7 +1,7 @@
 <nav>
   <div class="container">
     <div class="nav-content">
-      <div style="display: flex; align-items: center; gap: 2rem;">
+      <div class="nav-left">
         <%= link_to "BTC Play", root_path, class: "nav-brand" %>
 
         <% if user_signed_in? %>
@@ -14,14 +14,14 @@
           <% if current_user.user_credit_wallet %>
             <div class="credit-badge">
               <strong><%= current_user.user_credit_wallet.total_credits - current_user.user_credit_wallet.locked_credits %></strong>
-              <span style="color: #2563eb;">credits</span>
+              <span>credits</span>
             </div>
           <% end %>
 
-          <span style="color: #6b7280;"><%= current_user.username %></span>
+          <span class="nav-username"><%= current_user.username %></span>
           <%= button_to "Sign Out", destroy_user_session_path,
               method: :delete,
-              class: "btn btn-secondary",
+              class: "btn btn-ghost",
               data: { turbo: false } %>
         <% else %>
           <%= link_to "Sign In", new_user_session_path, class: "nav-link" %>

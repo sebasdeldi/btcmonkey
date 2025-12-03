@@ -1,331 +1,113 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
+ * BTC PLAY DESIGN SYSTEM
+ * Main application stylesheet
  *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
+ * This file imports all design tokens, components, and layout styles.
+ * It follows a modular structure where each component has its own file.
  *
- * Consider organizing styles into separate files for maintainability.
+ * STRUCTURE:
+ * 1. Design Tokens - CSS custom properties
+ * 2. Layout - Base styles, containers, grids, utilities
+ * 3. Components - Reusable UI components
+ *
+ * For detailed documentation, see:
+ * - DESIGN_SYSTEM.md - Complete design system documentation
+ * - COMPONENTS.md - HTML component library
+ * - DESIGN_SYSTEM_QUICK_START.md - Quick reference
  */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ===================================
+   1. DESIGN TOKENS
+   All design decisions in one place
+   ================================== */
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f9fafb;
-  color: #111827;
-  line-height: 1.6;
-}
+@import url("design_tokens.css");
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
+/* ===================================
+   2. LAYOUT
+   Base styles, containers, grids
+   ================================== */
 
-/* Navigation */
-nav {
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
+@import url("layout/base.css");
+@import url("layout/containers.css");
+@import url("layout/grid.css");
+@import url("layout/utilities.css");
 
-nav .nav-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-}
+/* ===================================
+   3. COMPONENTS
+   Reusable UI components
 
-nav .nav-brand {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #2563eb;
-  text-decoration: none;
-}
+   Each component has:
+   - Its own CSS file
+   - Matching HTML partial in app/views/components/
+   - Documentation in COMPONENTS.md
+   ================================== */
 
-nav .nav-links {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
+/* UI Components */
+@import url("components/buttons.css");
+@import url("components/cards.css");
+@import url("components/badges.css");
+@import url("components/alerts.css");
+@import url("components/forms.css");
+@import url("components/tables.css");
+@import url("components/navigation.css");
+@import url("components/hero.css");
 
-nav .nav-link {
-  color: #374151;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
-}
+/* App-Specific Components */
+@import url("components/package_card.css");
+@import url("components/wallet_card.css");
+@import url("components/transaction.css");
 
-nav .nav-link:hover {
-  color: #2563eb;
-}
+/* ===================================
+   NOTES
+   ================================== */
 
-nav .credit-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #eff6ff;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-}
-
-nav .btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  text-decoration: none;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-nav .btn-primary {
-  background-color: #2563eb;
-  color: white;
-}
-
-nav .btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-nav .btn-secondary {
-  background-color: transparent;
-  color: #6b7280;
-}
-
-nav .btn-secondary:hover {
-  color: #111827;
-}
-
-/* Flash Messages */
-.flash {
-  padding: 1rem;
-  margin: 1rem 0;
-  border-radius: 0.5rem;
-  border: 1px solid;
-}
-
-.flash-notice {
-  background-color: #d1fae5;
-  color: #065f46;
-  border-color: #6ee7b7;
-}
-
-.flash-alert {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-color: #fca5a5;
-}
-
-/* Credit Packages */
-.packages-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-.package-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: box-shadow 0.2s;
-}
-
-.package-card:hover {
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-}
-
-.package-header {
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-  color: white;
-  padding: 1.5rem;
-}
-
-.package-header h3 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.package-price {
-  font-size: 1.875rem;
-  font-weight: bold;
-}
-
-.package-body {
-  padding: 1.5rem;
-}
-
-.package-credits {
-  font-size: 2.25rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.package-description {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-  min-height: 40px;
-}
-
-.btn-buy {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-buy:hover {
-  background-color: #1d4ed8;
-}
-
-/* Wallet Display */
-.wallet-card {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 2rem 0;
-}
-
-.wallet-header {
-  font-size: 0.875rem;
-  color: #1e40af;
-  font-weight: 500;
-}
-
-.wallet-amount {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1e3a8a;
-}
-
-/* Transaction Details */
-.transaction-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin: 2rem 0;
-}
-
-.transaction-header {
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-  color: white;
-  padding: 1.5rem;
-}
-
-.transaction-body {
-  padding: 1.5rem;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.status-pending {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-paid, .status-confirmed {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-expired, .status-failed {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-/* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-thead {
-  background-color: #f9fafb;
-}
-
-th {
-  padding: 0.75rem 1.5rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-td {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* Utility Classes */
-.text-center {
-  text-align: center;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mt-8 {
-  margin-top: 2rem;
-}
-
-.py-8 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
-
-.link {
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.link:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-main {
-  min-height: calc(100vh - 64px);
-}
+/*
+ * File Organization:
+ *
+ * app/assets/stylesheets/
+ * ├── application.css (this file)
+ * ├── design_tokens.css
+ * ├── components.css (deprecated - kept for backwards compatibility)
+ * ├── components/
+ * │   ├── alerts.css
+ * │   ├── badges.css
+ * │   ├── buttons.css
+ * │   ├── cards.css
+ * │   ├── forms.css
+ * │   ├── hero.css
+ * │   ├── navigation.css
+ * │   ├── package_card.css
+ * │   ├── tables.css
+ * │   ├── transaction.css
+ * │   └── wallet_card.css
+ * └── layout/
+ *     ├── base.css
+ *     ├── containers.css
+ *     ├── grid.css
+ *     └── utilities.css
+ *
+ * Component Matching:
+ *
+ * CSS File                           HTML Partial
+ * --------------------------------   ----------------------------------
+ * components/buttons.css       <-->  views/components/_button.html.erb
+ * components/cards.css         <-->  views/components/_card.html.erb
+ * components/badges.css        <-->  views/components/_badge.html.erb
+ *                              <-->  views/components/_status_badge.html.erb
+ *                              <-->  views/components/_tag.html.erb
+ * components/alerts.css        <-->  views/components/_alert.html.erb
+ * components/forms.css         <-->  views/components/_form_field.html.erb
+ * components/navigation.css    <-->  views/shared/_navigation.html.erb
+ * components/hero.css          <-->  views/components/_hero.html.erb
+ * components/package_card.css  <-->  views/components/_package_card.html.erb
+ * components/wallet_card.css   <-->  views/components/_wallet_card.html.erb
+ *
+ * Benefits of this structure:
+ * ✓ Easy to find styles for specific components
+ * ✓ Smaller file sizes for better performance
+ * ✓ Better caching (unchanged files stay cached)
+ * ✓ Easier to maintain and debug
+ * ✓ Clear separation of concerns
+ * ✓ Matches HTML component structure
+ */

@@ -1,0 +1,21 @@
+<%
+  # Tag Component
+  #
+  # Parameters:
+  #   text: Tag text (required)
+  #   html_class: additional CSS classes
+  #
+  # Examples:
+  #   <%= render 'components/tag', text: 'Bitcoin' %>
+  #   <%= render 'components/tag', text: 'API' %>
+
+  text ||= ''
+  html_class ||= ''
+
+  css_classes = ['tag']
+  css_classes << html_class if html_class.present?
+
+  classes = css_classes.join(' ')
+%>
+
+<span class="<%= classes %>"><%= text %></span>

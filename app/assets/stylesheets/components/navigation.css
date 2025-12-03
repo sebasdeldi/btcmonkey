@@ -1,0 +1,141 @@
+/**
+ * NAVIGATION
+ * Navigation component styles
+ *
+ * Matches: app/views/shared/_navigation.html.erb
+ */
+
+.nav {
+  height: var(--nav-height);
+  background-color: var(--color-primary-white);
+  border-bottom: 1px solid var(--color-gray-200);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-sticky);
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.nav-brand {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-blue);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+.nav-brand:hover {
+  color: var(--color-primary-blue-dark);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.nav-link {
+  color: var(--color-gray-600);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-base);
+}
+
+.nav-link:hover {
+  color: var(--color-gray-900);
+  background-color: var(--color-gray-50);
+}
+
+.nav-link-active {
+  color: var(--color-primary-blue);
+  background-color: var(--color-info-light);
+}
+
+/* App-specific navigation elements */
+nav {
+  background-color: var(--color-primary-white);
+  border-bottom: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-xs);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-sticky);
+}
+
+nav .nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--nav-height);
+}
+
+nav .nav-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+nav .nav-brand {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-blue);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+nav .nav-brand:hover {
+  color: var(--color-primary-blue-dark);
+}
+
+nav .nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+nav .nav-link {
+  color: var(--color-gray-600);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  transition: var(--transition-base);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+}
+
+nav .nav-link:hover {
+  color: var(--color-primary-navy);
+  background-color: var(--color-gray-50);
+}
+
+nav .credit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--color-info-light);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+}
+
+nav .credit-badge strong {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-navy);
+}
+
+nav .credit-badge span {
+  color: var(--color-primary-blue);
+}
+
+nav .nav-username {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}

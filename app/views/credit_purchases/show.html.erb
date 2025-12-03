@@ -1,123 +1,113 @@
 <div class="container py-8">
-  <div style="max-width: 800px; margin: 0 auto;">
-    <%= link_to "← Back to Packages", credit_purchases_path, class: "link", style: "display: inline-block; margin-bottom: 1.5rem;" %>
+  <div class="transaction-detail-container">
+    <%= link_to "← Back to Packages", credit_purchases_path, class: "text-link mb-6" %>
 
-    <div class="transaction-card">
-      <div class="transaction-header">
-        <h1 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">Transaction Details</h1>
-        <p style="color: #bfdbfe;">Order #<%= @transaction.id %></p>
+    <div class="card">
+      <div class="card-header">
+        <h1>Transaction Details</h1>
+        <p class="text-muted">Order #<%= @transaction.id %></p>
       </div>
 
-      <div class="transaction-body">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+      <div class="card-body">
+        <div class="transaction-info-row mb-6">
           <div>
-            <p style="font-size: 0.875rem; color: #6b7280;">Status</p>
-            <span class="status-badge status-<%= @transaction.status %>">
-              <%= @transaction.status.titleize %>
-            </span>
+            <p class="text-sm text-muted">Status</p>
+            <%= render 'components/status_badge', status: @transaction.status %>
           </div>
-          <div style="text-align: right;">
-            <p style="font-size: 0.875rem; color: #6b7280;">Created</p>
-            <p style="font-weight: 600;"><%= @transaction.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+          <div class="text-right">
+            <p class="text-sm text-muted">Created</p>
+            <p class="font-semibold"><%= @transaction.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
           </div>
         </div>
 
         <% if @transaction.pending? %>
-          <div class="flash" style="background-color: #fef3c7; color: #92400e; border-color: #fde68a; margin-bottom: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">⏳ Waiting for Payment</p>
-            <p style="font-size: 0.875rem;">
-              Your transaction is pending. Please complete the Bitcoin payment to receive your credits.
-            </p>
-          </div>
+          <%= render 'components/alert',
+              variant: 'warning',
+              title: '⏳ Waiting for Payment',
+              message: 'Your transaction is pending. Please complete the Bitcoin payment to receive your credits.' %>
         <% elsif @transaction.paid? || @transaction.confirmed? %>
-          <div class="flash" style="background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; margin-bottom: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">✓ Payment Confirmed</p>
-            <p style="font-size: 0.875rem;">
-              Your payment has been received and <%= @transaction.credit_package.credits %> credits have been added to your account!
-            </p>
-          </div>
+          <%= render 'components/alert',
+              variant: 'success',
+              title: '✓ Payment Confirmed',
+              message: "Your payment has been received and #{@transaction.credit_package.credits} credits have been added to your account!" %>
         <% elsif @transaction.expired? %>
-          <div class="flash flash-alert" style="margin-bottom: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">⚠ Transaction Expired</p>
-            <p style="font-size: 0.875rem;">
-              This transaction has expired. Please create a new purchase if you still want to buy credits.
-            </p>
-          </div>
+          <%= render 'components/alert',
+              variant: 'error',
+              title: '⚠ Transaction Expired',
+              message: 'This transaction has expired. Please create a new purchase if you still want to buy credits.' %>
         <% elsif @transaction.failed? %>
-          <div class="flash flash-alert" style="margin-bottom: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">✗ Transaction Failed</p>
-            <p style="font-size: 0.875rem;">
-              This transaction has failed. Please contact support if you believe this is an error.
-            </p>
-          </div>
+          <%= render 'components/alert',
+              variant: 'error',
+              title: '✗ Transaction Failed',
+              message: 'This transaction has failed. Please contact support if you believe this is an error.' %>
         <% end %>
 
-        <div style="border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
-          <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Package Details</h2>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Package</span>
-              <span style="font-weight: 600;"><%= @transaction.credit_package.name %></span>
+        <div class="section-divider">
+          <h2 class="section-title">Package Details</h2>
+          <div class="detail-rows">
+            <div class="detail-row">
+              <span class="text-muted">Package</span>
+              <span class="font-semibold"><%= @transaction.credit_package.name %></span>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Credits</span>
-              <span style="font-weight: 600;"><%= @transaction.credit_package.credits %> credits</span>
+            <div class="detail-row">
+              <span class="text-muted">Credits</span>
+              <span class="font-semibold"><%= @transaction.credit_package.credits %> credits</span>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Price (USD)</span>
-              <span style="font-weight: 600;"><%= number_to_currency(@transaction.credit_package.price_usd) %></span>
+            <div class="detail-row">
+              <span class="text-muted">Price (USD)</span>
+              <span class="font-semibold"><%= number_to_currency(@transaction.credit_package.price_usd) %></span>
             </div>
           </div>
         </div>
 
         <% if @transaction.btc_address.present? %>
-          <div style="border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1.5rem;">
-            <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Bitcoin Payment Details</h2>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="section-divider mt-6">
+            <h2 class="section-title">Bitcoin Payment Details</h2>
+            <div class="detail-rows">
               <% if @transaction.invoice_id.present? %>
-                <div>
-                  <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Invoice ID</label>
-                  <code style="display: block; background-color: #f3f4f6; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; word-break: break-all;"><%= @transaction.invoice_id %></code>
+                <div class="mb-4">
+                  <label class="form-label text-sm">Invoice ID</label>
+                  <code class="code-block"><%= @transaction.invoice_id %></code>
                 </div>
               <% end %>
 
-              <div>
-                <label style="display: block; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Bitcoin Address</label>
-                <code style="display: block; background-color: #f3f4f6; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; word-break: break-all;"><%= @transaction.btc_address %></code>
+              <div class="mb-4">
+                <label class="form-label text-sm">Bitcoin Address</label>
+                <code class="code-block"><%= @transaction.btc_address %></code>
               </div>
 
               <% if @transaction.expected_btc.present? %>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #6b7280;">Expected BTC</span>
-                  <span style="font-family: monospace; font-weight: 600;"><%= @transaction.expected_btc %> BTC</span>
+                <div class="detail-row">
+                  <span class="text-muted">Expected BTC</span>
+                  <span class="font-mono font-semibold"><%= @transaction.expected_btc %> BTC</span>
                 </div>
               <% end %>
 
               <% if @transaction.received_btc.present? && @transaction.received_btc > 0 %>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #6b7280;">Received BTC</span>
-                  <span style="font-family: monospace; font-weight: 600; color: #059669;"><%= @transaction.received_btc %> BTC</span>
+                <div class="detail-row">
+                  <span class="text-muted">Received BTC</span>
+                  <span class="font-mono font-semibold text-success"><%= @transaction.received_btc %> BTC</span>
                 </div>
               <% end %>
 
               <% if @transaction.confirmations.present? && @transaction.confirmations > 0 %>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #6b7280;">Confirmations</span>
-                  <span style="font-weight: 600;"><%= @transaction.confirmations %></span>
+                <div class="detail-row">
+                  <span class="text-muted">Confirmations</span>
+                  <span class="font-semibold"><%= @transaction.confirmations %></span>
                 </div>
               <% end %>
             </div>
           </div>
         <% end %>
 
-        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-          <%= link_to "View All Transactions", credit_purchases_path, class: "btn btn-primary", style: "display: inline-block; text-align: center; width: 100%;" %>
+        <div class="section-divider mt-6">
+          <%= link_to "View All Transactions", credit_purchases_path, class: "btn btn-primary btn-full" %>
 
           <% if @transaction.pending? %>
-            <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 0.75rem; width: 100%;">
+            <button onclick="location.reload()" class="btn btn-primary btn-full mt-3">
               Refresh Status
             </button>
-            <p class="text-center" style="margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
+            <p class="text-center mt-4 text-sm text-muted">
               This page will automatically update when payment is received
             </p>
             <script>

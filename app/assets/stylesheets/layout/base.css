@@ -1,0 +1,72 @@
+/**
+ * BASE LAYOUT
+ * Global reset and base styles
+ */
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family-base);
+  background-color: var(--color-gray-50);
+  color: var(--color-gray-900);
+  line-height: var(--line-height-relaxed);
+}
+
+main {
+  min-height: calc(100vh - var(--nav-height));
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-navy);
+  line-height: var(--line-height-snug);
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+  margin-bottom: var(--space-4);
+}
+
+h2 {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-4);
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-3);
+}
+
+h4 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-2);
+}
+
+p {
+  margin-bottom: var(--space-4);
+  color: var(--color-gray-700);
+}
+
+/* Links */
+.link {
+  color: var(--color-primary-blue);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+.link:hover {
+  color: var(--color-primary-blue-dark);
+  text-decoration: underline;
+}
