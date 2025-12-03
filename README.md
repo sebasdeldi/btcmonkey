@@ -290,6 +290,21 @@ else
 end
 ```
 
+Use a tunneling service (Recommended for Development)
+- Install ngrok (if not already installed):
+```$ brew install ngrok/ngrok/ngrok```
+- Start your Rails server:
+```$ rails server``` or ```$ bin/dev```
+- Start ngrok in another terminal:
+```$ ngrok http 3000```
+
+Update your BTCPay webhook URL:
+- ngrok will give you a URL like https://abc123.ngrok.io
+- Go to your BTCPay Server: https://pay.btcmonkey.io/
+- Navigate to Store Settings → Webhooks
+- Update the webhook URL to: https://abc123.ngrok.io/webhooks/btcpay
+Note: The ngrok URL changes each time you restart it (unless you have a paid plan). You'll need to update the webhook URL in BTCPay Server each time.
+
 ### Service Pattern
 
 All services follow a consistent pattern:

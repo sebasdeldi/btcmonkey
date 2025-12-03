@@ -83,30 +83,30 @@ class BtcPayWebhooksController < ApplicationController
   # Verify the webhook signature using HMAC-SHA256.
   #
   # BTCPay Server signs webhooks with a secret to prevent spoofing.
-  # The signature is sent in the "BTCPay-Sig" header as "sha256=<hex_digest>".
+  # The signature is sent in the "BTCPAY-SIG" header.
   #
   # Security:
   # 1. Computes expected signature from request body and shared secret
   # 2. Compares with provided signature using constant-time comparison
   # 3. Returns 401 Unauthorized if signatures don't match
   #
-  # If BTCPAY_WEBHOOK_SECRET is not set, signature verification is skipped
-  # (useful for development, but should always be set in production).
-  #
   # @return [Boolean, void] true if signature valid, or renders 401 and returns
   def verify_webhook_signature
-    signature = request.headers["BTCPay-Sig"]
-    webhook_secret = ENV.fetch("BTCPAY_WEBHOOK_SECRET", nil)
+    signature = request.headers["BTCPAY-SIG"]
+    webhook_secret = ENV.fetch("BTCPAY_WEBHOOK_SECRET")
 
-    # Skip verification if no secret configured (development only)
-    return true if webhook_secret.blank?
+    if signature.blank?
+      Rails.logger.warn "Missing webhook signature header"
+      head :unauthorized
+      return
+    end
 
     body = request.body.read
-    expected_signature = OpenSSL::HMAC.hexdigest("SHA256", webhook_secret, body)
+    expected_signature = "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", webhook_secret, body)
 
     # Use constant-time comparison to prevent timing attacks
-    unless ActiveSupport::SecurityUtils.secure_compare(signature.to_s, "sha256=#{expected_signature}")
-      Rails.logger.warn "Invalid webhook signature"
+    unless ActiveSupport::SecurityUtils.secure_compare(signature, expected_signature)
+      Rails.logger.warn "Invalid webhook signature. Expected: #{expected_signature}, Got: #{signature}"
       head :unauthorized
     end
   rescue StandardError => e
