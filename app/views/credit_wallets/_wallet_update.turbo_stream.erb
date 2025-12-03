@@ -1,0 +1,20 @@
+<%# Update navbar credit badge %>
+<%= turbo_stream.replace "user-wallet-navbar-#{user_id}" do %>
+  <div id="user-wallet-navbar-#{user_id}" class="credit-badge">
+    <strong><%= available_credits %></strong>
+    <span>credits</span>
+  </div>
+<% end %>
+
+<%# Update wallet card on credit purchases page %>
+<%= turbo_stream.replace "user-wallet-card-#{user_id}" do %>
+  <%# Note: This passes available_credits as a local to avoid helper dependency issues during broadcasts %>
+  <%= render 'components/wallet_card', wallet: wallet, available_credits: available_credits %>
+<% end %>
+
+<%# Update user wallet detail (if exists on page) %>
+<%= turbo_stream.replace "user-wallet-detail-#{user_id}" do %>
+  <div id="user-wallet-detail-#{user_id}" class="wallet-card flex items-center justify-between">
+    <%= render 'shared/wallet_balance', wallet: wallet, available_credits: available_credits %>
+  </div>
+<% end %>

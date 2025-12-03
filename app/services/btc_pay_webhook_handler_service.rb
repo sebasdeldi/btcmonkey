@@ -138,7 +138,7 @@ class BtcPayWebhookHandlerService
   # @return [Boolean] true if handled successfully, false otherwise
   def handle_invoice_settled
     # Eager load associations to prevent N+1 queries during broadcast rendering
-    transaction = BtcTransaction.includes(:user, :credit_package, user: :user_credit_wallet)
+    transaction = BtcTransaction.preload(:user, :credit_package, user: :user_credit_wallet)
                                  .find_by(invoice_id: invoice_id)
 
     unless transaction
@@ -167,7 +167,7 @@ class BtcPayWebhookHandlerService
   # @return [Boolean] always returns true
   def handle_invoice_expired
     # Eager load associations for broadcast rendering
-    transaction = BtcTransaction.includes(:user, :credit_package)
+    transaction = BtcTransaction.preload(:user, :credit_package)
                                  .find_by(invoice_id: invoice_id)
     return true unless transaction
 
@@ -185,7 +185,7 @@ class BtcPayWebhookHandlerService
   # @return [Boolean] always returns true
   def handle_invoice_invalid
     # Eager load associations for broadcast rendering
-    transaction = BtcTransaction.includes(:user, :credit_package)
+    transaction = BtcTransaction.preload(:user, :credit_package)
                                  .find_by(invoice_id: invoice_id)
     return true unless transaction
 

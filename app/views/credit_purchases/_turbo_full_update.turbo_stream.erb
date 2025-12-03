@@ -1,28 +1,14 @@
-<%# Replace transaction status section %>
-<%= turbo_stream.replace "transaction-#{transaction.id}-status" do %>
-  <%= render 'credit_purchases/transaction_status', transaction: transaction %>
-<% end %>
+<%# Common updates (status, alert, row) %>
+<%= render 'credit_purchases/transaction_common_updates', transaction: transaction %>
 
-<%# Replace alert section %>
-<%= turbo_stream.replace "transaction-#{transaction.id}-alert" do %>
-  <%= render 'credit_purchases/transaction_alert', transaction: transaction %>
-<% end %>
-
-<%# Replace payment details %>
+<%# Full update specific: payment details %>
 <%= turbo_stream.replace "transaction-#{transaction.id}-payment-details" do %>
   <%= render 'credit_purchases/payment_details', transaction: transaction %>
 <% end %>
 
-<%# Replace transaction row in list (if user is on index page) %>
-<%= turbo_stream.replace "transaction-row-#{transaction.id}" do %>
-  <tr id="transaction-row-#{transaction.id}">
-    <%= render 'credit_purchases/transaction_row', transaction: transaction %>
-  </tr>
-<% end %>
-
-<%# Update wallet balance %>
-<%= turbo_stream.replace "user-wallet-#{transaction.user_id}" do %>
-  <div id="user-wallet-#{transaction.user_id}" class="wallet-card flex items-center justify-between">
-    <%= render 'shared/wallet_balance', wallet: transaction.user.user_credit_wallet %>
+<%# Full update specific: wallet balance %>
+<%= turbo_stream.replace "user-wallet-detail-#{transaction.user_id}" do %>
+  <div id="user-wallet-detail-#{transaction.user_id}" class="wallet-card flex items-center justify-between">
+    <%= render 'shared/wallet_balance', wallet: transaction.user.user_credit_wallet, available_credits: transaction.user.user_credit_wallet.total_credits - transaction.user.user_credit_wallet.locked_credits %>
   </div>
 <% end %>

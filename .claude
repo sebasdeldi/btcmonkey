@@ -35,6 +35,9 @@ Architecture follows clean separation between:
 * **Use Rails conventions whenever possible**.
 * Always maintain **idempotency** in webhook logic.
 * Keep code small, expressive, and conventional.
+* **NEVER use inline ERB in services** - always use dedicated `.turbo_stream.erb` partials.
+* **DRY up duplicated Turbo Stream code** - extract to shared partials.
+* **Use `preload` instead of `includes`** for simple eager loading (when not filtering by associations).
 
 ## 3.2 Service Objects Pattern
 

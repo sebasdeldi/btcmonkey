@@ -1,0 +1,18 @@
+<%# Shared transaction updates used by both full and status-only broadcasts %>
+
+<%# Replace transaction status section %>
+<%= turbo_stream.replace "transaction-#{transaction.id}-status" do %>
+  <%= render 'credit_purchases/transaction_status', transaction: transaction %>
+<% end %>
+
+<%# Replace alert section %>
+<%= turbo_stream.replace "transaction-#{transaction.id}-alert" do %>
+  <%= render 'credit_purchases/transaction_alert', transaction: transaction %>
+<% end %>
+
+<%# Replace transaction row in list %>
+<%= turbo_stream.replace "transaction-row-#{transaction.id}" do %>
+  <tr id="transaction-row-#{transaction.id}">
+    <%= render 'credit_purchases/transaction_row', transaction: transaction %>
+  </tr>
+<% end %>

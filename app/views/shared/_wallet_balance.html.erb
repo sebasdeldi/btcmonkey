@@ -1,7 +1,9 @@
+<%# This partial expects `available_credits` as a local variable (pre-calculated)
+    to avoid helper dependency issues during broadcasts %>
 <div>
   <p class="wallet-header">Available Credits</p>
   <p class="wallet-amount">
-    <%= available_credits(wallet) %>
+    <%= available_credits %>
   </p>
 </div>
 <%= link_to "Buy More", credit_purchases_path, class: "btn btn-primary" %>
