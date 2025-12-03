@@ -1,6 +1,7 @@
 <% return if wallet.nil? %>
+<% user ||= wallet.user %>
 
-<div class="wallet-card">
+<div id="wallet-card-<%= user.id %>" class="wallet-card">
   <p class="wallet-header">Your Current Balance</p>
   <p class="wallet-amount">
     <%= available_credits(wallet) %>

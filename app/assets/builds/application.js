@@ -8655,6 +8655,12 @@ var hello_controller_default = class extends Controller {
 
 // app/javascript/controllers/index.js
 application.register("hello", hello_controller_default);
+
+// app/javascript/application.js
+StreamActions.open_window = function() {
+  const url = this.getAttribute("target");
+  window.open(url, "_blank");
+};
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

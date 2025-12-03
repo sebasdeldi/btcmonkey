@@ -1,0 +1,9 @@
+<td><%= transaction.created_at.strftime("%b %d, %Y") %></td>
+<td><%= transaction.credit_package.name %></td>
+<td><%= number_to_currency(transaction.credit_package.price_usd) %></td>
+<td>
+  <%= render 'components/status_badge', status: transaction.status %>
+</td>
+<td>
+  <%= link_to "View", credit_purchase_path(transaction), class: "link" %>
+</td>

@@ -1,0 +1,21 @@
+<% if transaction.pending? %>
+  <%= render 'components/alert',
+      variant: 'warning',
+      title: '⏳ Waiting for Payment',
+      message: 'Your transaction is pending. Please complete the Bitcoin payment to receive your credits.' %>
+<% elsif transaction.paid? || transaction.confirmed? %>
+  <%= render 'components/alert',
+      variant: 'success',
+      title: '✓ Payment Confirmed',
+      message: "Your payment has been received and #{transaction.credit_package.credits} credits have been added to your account!" %>
+<% elsif transaction.expired? %>
+  <%= render 'components/alert',
+      variant: 'error',
+      title: '⚠ Transaction Expired',
+      message: 'This transaction has expired. Please create a new purchase if you still want to buy credits.' %>
+<% elsif transaction.failed? %>
+  <%= render 'components/alert',
+      variant: 'error',
+      title: '✗ Transaction Failed',
+      message: 'This transaction has failed. Please contact support if you believe this is an error.' %>
+<% end %>

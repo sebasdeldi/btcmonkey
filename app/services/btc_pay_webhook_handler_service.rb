@@ -137,7 +137,9 @@ class BtcPayWebhookHandlerService
   #
   # @return [Boolean] true if handled successfully, false otherwise
   def handle_invoice_settled
-    transaction = BtcTransaction.find_by(invoice_id: invoice_id)
+    # Eager load associations to prevent N+1 queries during broadcast rendering
+    transaction = BtcTransaction.includes(:user, :credit_package, user: :user_credit_wallet)
+                                 .find_by(invoice_id: invoice_id)
 
     unless transaction
       @errors << "Transaction not found for invoice: #{invoice_id}"
@@ -151,6 +153,9 @@ class BtcPayWebhookHandlerService
       add_credits_to_wallet(transaction)
     end
 
+    # Broadcast updates after successful commit
+    broadcast_transaction_updates(transaction) if success?
+
     success?
   end
 
@@ -161,10 +166,14 @@ class BtcPayWebhookHandlerService
   #
   # @return [Boolean] always returns true
   def handle_invoice_expired
-    transaction = BtcTransaction.find_by(invoice_id: invoice_id)
+    # Eager load associations for broadcast rendering
+    transaction = BtcTransaction.includes(:user, :credit_package)
+                                 .find_by(invoice_id: invoice_id)
     return true unless transaction
 
     transaction.update(status: :expired)
+    broadcast_transaction_status_change(transaction)
+
     true
   end
 
@@ -175,10 +184,14 @@ class BtcPayWebhookHandlerService
   #
   # @return [Boolean] always returns true
   def handle_invoice_invalid
-    transaction = BtcTransaction.find_by(invoice_id: invoice_id)
+    # Eager load associations for broadcast rendering
+    transaction = BtcTransaction.includes(:user, :credit_package)
+                                 .find_by(invoice_id: invoice_id)
     return true unless transaction
 
     transaction.update(status: :failed)
+    broadcast_transaction_status_change(transaction)
+
     true
   end
 
@@ -241,5 +254,31 @@ class BtcPayWebhookHandlerService
     else
       "pending"
     end
+  end
+
+  # Broadcast full transaction update (payment received)
+  # Uses Turbo::StreamsChannel for compatibility with turbo_stream_from helper
+  def broadcast_transaction_updates(transaction)
+    Turbo::StreamsChannel.broadcast_render_to(
+      transaction.user,
+      partial: 'credit_purchases/turbo_full_update',
+      formats: [:turbo_stream],
+      locals: { transaction: transaction }
+    )
+
+    Rails.logger.info "Broadcasted full update for transaction #{transaction.id} to user #{transaction.user_id}"
+  end
+
+  # Broadcast status-only update (expired/failed)
+  # Uses Turbo::StreamsChannel for compatibility with turbo_stream_from helper
+  def broadcast_transaction_status_change(transaction)
+    Turbo::StreamsChannel.broadcast_render_to(
+      transaction.user,
+      partial: 'credit_purchases/turbo_status_update',
+      formats: [:turbo_stream],
+      locals: { transaction: transaction }
+    )
+
+    Rails.logger.info "Broadcasted status update for transaction #{transaction.id} to user #{transaction.user_id}"
   end
 end

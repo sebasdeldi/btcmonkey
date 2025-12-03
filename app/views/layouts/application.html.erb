@@ -25,6 +25,9 @@
   <body>
     <%= render "shared/navigation" %>
     <%= render "shared/flash_messages" %>
+    <% if user_signed_in? %>
+      <%= turbo_stream_from current_user %>
+    <% end %>
     <main>
       <%= yield %>
     </main>

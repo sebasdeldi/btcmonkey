@@ -59,6 +59,7 @@ rails server
 
 ### Directory Structure
 
+
 ```
 app/
 ├── clients/              # External API clients

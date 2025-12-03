@@ -1,0 +1,8 @@
+<div>
+  <p class="text-sm text-muted">Status</p>
+  <%= render 'components/status_badge', status: transaction.status %>
+</div>
+<div class="text-right">
+  <p class="text-sm text-muted">Created</p>
+  <p class="font-semibold"><%= transaction.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+</div>

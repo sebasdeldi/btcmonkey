@@ -1,0 +1,7 @@
+<div>
+  <p class="wallet-header">Available Credits</p>
+  <p class="wallet-amount">
+    <%= available_credits(wallet) %>
+  </p>
+</div>
+<%= link_to "Buy More", credit_purchases_path, class: "btn btn-primary" %>

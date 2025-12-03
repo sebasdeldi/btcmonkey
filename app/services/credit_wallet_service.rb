@@ -81,6 +81,9 @@ class CreditWalletService
       end
     end
 
+    # Broadcast wallet update after successful commit
+    broadcast_wallet_update if success?
+
     success?
   end
 
@@ -213,5 +216,58 @@ class CreditWalletService
       return false
     end
     true
+  end
+
+  # Broadcast wallet balance update
+  # Uses Turbo::StreamsChannel for compatibility with turbo_stream_from helper
+  def broadcast_wallet_update
+    # Eager load wallet to prevent N+1
+    @user.reload # Ensure we have fresh data
+    wallet = @user.user_credit_wallet
+    user_id = @user.id
+
+    # Calculate available credits (helper logic inline to avoid context issues)
+    available_credits = wallet.total_credits - wallet.locked_credits
+    has_locked = wallet.locked_credits > 0
+
+    Turbo::StreamsChannel.broadcast_render_to(
+      @user,
+      inline: <<~ERB,
+        <%= turbo_stream.replace "navbar-wallet-#{user_id}" do %>
+          <div id="navbar-wallet-#{user_id}" class="credit-badge">
+            <strong><%= available_credits %></strong>
+            <span>credits</span>
+          </div>
+        <% end %>
+        <%= turbo_stream.replace "wallet-card-#{user_id}" do %>
+          <div id="wallet-card-#{user_id}" class="wallet-card">
+            <p class="wallet-header">Your Current Balance</p>
+            <p class="wallet-amount">
+              <%= available_credits %>
+              <span class="wallet-amount-label">available credits</span>
+            </p>
+            <% if has_locked %>
+              <p class="wallet-locked">
+                (<%= locked_credits %> credits locked)
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+        <%= turbo_stream.replace "user-wallet-#{user_id}" do %>
+          <div id="user-wallet-#{user_id}" class="wallet-card flex items-center justify-between">
+            <div>
+              <p class="wallet-header">Available Credits</p>
+              <p class="wallet-amount">
+                <%= available_credits %>
+              </p>
+            </div>
+            <%= link_to "Buy More", credit_purchases_path, class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      ERB
+      locals: { user_id: user_id, available_credits: available_credits, has_locked: has_locked, locked_credits: wallet.locked_credits }
+    )
+
+    Rails.logger.info "Broadcasted wallet update to user #{@user.id}"
   end
 end

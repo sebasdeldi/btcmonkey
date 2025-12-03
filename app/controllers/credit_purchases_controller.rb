@@ -44,13 +44,14 @@ class CreditPurchasesController < ApplicationController
   # Uses CreditPurchaseService to:
   # 1. Create a pending BtcTransaction
   # 2. Generate a BTCPay Server invoice
-  # 3. Redirect user to BTCPay checkout page
+  # 3. Add transaction to list via Turbo Stream (if Turbo request)
+  # 4. Redirect user to BTCPay checkout page
   #
   # If successful, user is redirected to BTCPay Server to complete payment.
   # If failed (e.g., inactive package, API error), user is redirected back
   # to the packages list with an error message.
   #
-  # @return [void] redirects to BTCPay checkout or back to index with error
+  # @return [void] responds with Turbo Stream + redirect or standard redirect
   #
   # POST /credit_purchases
   # @param credit_package_id [Integer] the ID of the package to purchase (in params)
@@ -61,7 +62,13 @@ class CreditPurchasesController < ApplicationController
     )
 
     if service.call
-      redirect_to service.checkout_link, allow_other_host: true
+      @checkout_link = service.checkout_link
+      @new_transaction = service.transaction
+
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to service.checkout_link, allow_other_host: true }
+      end
     else
       flash[:alert] = service.errors.join(", ")
       redirect_to credit_purchases_path

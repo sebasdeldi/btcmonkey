@@ -1,0 +1,35 @@
+<%# Prepend new transaction to list %>
+<%= turbo_stream.prepend "transactions-list" do %>
+  <%= render "credit_purchases/transaction_row_wrapper", transaction: @new_transaction %>
+<% end %>
+
+<%# Show transactions section if it was hidden (first transaction) %>
+<% if current_user.btc_transactions.count == 1 %>
+  <%= turbo_stream.update "transactions-section" do %>
+    <div id="transactions-section" class="mt-8">
+      <h2>Recent Transactions</h2>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Package</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-list">
+            <%= render "credit_purchases/transaction_row_wrapper", transaction: @new_transaction %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%# Open checkout in new tab using Turbo custom action %>
+<turbo-stream action="open_window" target="<%= @checkout_link %>">
+  <template></template>
+</turbo-stream>
+

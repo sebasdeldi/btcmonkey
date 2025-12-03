@@ -1,0 +1,20 @@
+<% if transaction.expected_btc.present? %>
+  <div class="detail-row">
+    <span class="text-muted">Expected BTC</span>
+    <span class="font-mono font-semibold"><%= transaction.expected_btc %> BTC</span>
+  </div>
+<% end %>
+
+<% if transaction.received_btc.present? && transaction.received_btc > 0 %>
+  <div class="detail-row">
+    <span class="text-muted">Received BTC</span>
+    <span class="font-mono font-semibold text-success"><%= transaction.received_btc %> BTC</span>
+  </div>
+<% end %>
+
+<% if transaction.confirmations.present? && transaction.confirmations > 0 %>
+  <div class="detail-row">
+    <span class="text-muted">Confirmations</span>
+    <span class="font-semibold"><%= transaction.confirmations %></span>
+  </div>
+<% end %>
