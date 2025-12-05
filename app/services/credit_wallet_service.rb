@@ -74,39 +74,32 @@ class CreditWalletService
         @errors.concat(@wallet.errors.full_messages)
         raise ActiveRecord::Rollback
       end
+
+      # Record in ledger
+      begin
+        CreditLedgerService.record_entry(
+          user: @user,
+          movement_type: :purchase,
+          amount: amount,
+          source: source,
+          description: "Credits added to wallet",
+          metadata: { source_class: source&.class&.name }
+        )
+      rescue CreditLedgerService::BalanceMismatchError => e
+        @errors << "Ledger error: #{e.message}"
+        Rails.logger.error "Ledger balance mismatch for user #{@user.id}: #{e.message}"
+        raise ActiveRecord::Rollback
+      rescue StandardError => e
+        @errors << "Failed to record ledger entry: #{e.message}"
+        Rails.logger.error "Failed to create ledger entry for user #{@user.id}: #{e.message}"
+        raise ActiveRecord::Rollback
+      end
     end
 
     # Broadcast wallet update after successful commit
     broadcast_wallet_update if success?
 
     success?
-  end
-
-  # DEPRECATED: Lock credits mechanism has been removed.
-  # Spot purchases now use direct deduction since they are instant transactions.
-  #
-  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
-  def lock_credits(amount)
-    @errors << "DEPRECATED: lock_credits is no longer supported. Use direct deduction instead."
-    false
-  end
-
-  # DEPRECATED: Unlock credits mechanism has been removed.
-  # Spot purchases now use direct deduction since they are instant transactions.
-  #
-  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
-  def unlock_credits(amount)
-    @errors << "DEPRECATED: unlock_credits is no longer supported. Use direct deduction instead."
-    false
-  end
-
-  # DEPRECATED: Deduct credits mechanism has been removed.
-  # Spot purchases now use direct deduction since they are instant transactions.
-  #
-  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
-  def deduct_credits(amount)
-    @errors << "DEPRECATED: deduct_credits is no longer supported. Use direct deduction instead."
-    false
   end
 
   # Calculate the number of available credits (now simply returns total_credits).

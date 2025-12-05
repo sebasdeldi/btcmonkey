@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :btc_transactions, dependent: :destroy
   has_many :spot_purchases, dependent: :destroy
   has_many :game_sessions, through: :spot_purchases
+  has_many :credit_ledger_entries, dependent: :restrict_with_error
 
   validates :username, presence: true, uniqueness: true
 end

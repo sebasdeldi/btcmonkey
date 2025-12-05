@@ -61,6 +61,7 @@ class SpotPurchaseService
   #
   # Performs validations, deducts credits, creates spot purchase, and updates
   # game session status if needed. All within a database transaction.
+  # Broadcasts are performed after successful transaction commit.
   #
   # @return [Boolean] true if purchase succeeds, false otherwise
   def call
@@ -76,9 +77,13 @@ class SpotPurchaseService
       return false unless @errors.empty?
 
       deduct_credits
-      create_spot_purchase
+      create_spot_purchase_without_broadcast
+      record_spot_debit_in_ledger
       update_session_status_if_full
     end
+
+    # Broadcast updates after successful transaction commit
+    broadcast_spot_purchase_updates if success?
 
     success?
   end
@@ -162,15 +167,22 @@ class SpotPurchaseService
       @errors.concat(wallet.errors.full_messages)
       raise ActiveRecord::Rollback
     end
+
+    # Store pending ledger data (will be recorded after spot_purchase is created)
+    @pending_ledger_recording = {
+      amount: -@game_session.price_in_credits,
+      description: "Spot purchase in #{@game_session.name}"
+    }
   end
 
-  # Create the spot purchase record.
+  # Create the spot purchase record without broadcasting.
   #
   # Assigns the next sequential spot number and records the credits spent.
+  # Broadcasts are handled separately after transaction commit.
   #
   # @return [void]
   # @raise [ActiveRecord::Rollback] if spot purchase creation fails
-  def create_spot_purchase
+  def create_spot_purchase_without_broadcast
     @spot_purchase = @user.spot_purchases.build(
       game_session: @game_session,
       credits_spent: @game_session.price_in_credits,
@@ -181,9 +193,39 @@ class SpotPurchaseService
       @errors.concat(@spot_purchase.errors.full_messages)
       raise ActiveRecord::Rollback
     end
+  end
 
-    # Broadcast real-time updates via Turbo Streams
-    broadcast_spot_purchase_updates
+  # Record spot debit in the credit ledger.
+  #
+  # Uses pending data stored by deduct_credits and the newly created spot_purchase.
+  #
+  # @return [void]
+  # @raise [ActiveRecord::Rollback] if ledger recording fails
+  def record_spot_debit_in_ledger
+    return unless @pending_ledger_recording && @spot_purchase
+
+    begin
+      CreditLedgerService.record_entry(
+        user: @user,
+        movement_type: :debit_spot,
+        amount: @pending_ledger_recording[:amount],
+        source: @spot_purchase,
+        description: @pending_ledger_recording[:description],
+        metadata: {
+          game_session_id: @game_session.id,
+          game_session_type: @game_session.game_session_type,
+          spot_number: @spot_purchase.spot_number
+        }
+      )
+    rescue CreditLedgerService::BalanceMismatchError => e
+      @errors << "Ledger error: #{e.message}"
+      Rails.logger.error "Ledger balance mismatch for user #{@user.id}: #{e.message}"
+      raise ActiveRecord::Rollback
+    rescue StandardError => e
+      @errors << "Failed to record ledger entry: #{e.message}"
+      Rails.logger.error "Failed to create ledger entry for user #{@user.id}: #{e.message}"
+      raise ActiveRecord::Rollback
+    end
   end
 
   # Update game session status to 'full' if all spots are sold.
@@ -242,11 +284,13 @@ class SpotPurchaseService
   # - Progress bar (updates percentage)
   # - Spots remaining counter
   # - Participate button state (if session becomes full)
+  # - Game cards on index and my_games pages
   #
   # @return [void]
   def broadcast_spot_purchase_updates
-    # Reload to get fresh data
+    # Reload to get fresh data with associations
     @game_session.reload
+    @game_session.spot_purchases.reload
 
     # Broadcast to game session show page
     Turbo::StreamsChannel.broadcast_replace_to(
@@ -285,6 +329,9 @@ class SpotPurchaseService
 
     # Update the game session card on index page for all users
     broadcast_card_updates
+
+    # Update the game session card on my_games page for all participants
+    broadcast_my_games_updates
   end
 
   # Broadcast updates to game session card on index page.
@@ -301,5 +348,27 @@ class SpotPurchaseService
       partial: "components/game_session_card",
       locals: { game_session: @game_session }
     )
+  end
+
+  # Broadcast updates to my_games page for all participants in this session.
+  #
+  # Each user who has purchased a spot gets their card updated on their my_games page.
+  #
+  # @return [void]
+  def broadcast_my_games_updates
+    # Get all users who have purchased spots in this session
+    participant_user_ids = @game_session.spot_purchases.pluck(:user_id).uniq
+
+    # Broadcast to each participant's my_games page
+    participant_user_ids.each do |user_id|
+      Turbo::StreamsChannel.broadcast_replace_to(
+        "my_games_#{user_id}",
+        target: "game-session-#{@game_session.id}",
+        partial: "components/game_session_card",
+        locals: { game_session: @game_session }
+      )
+    end
+
+    Rails.logger.info "Broadcasted my_games updates for session #{@game_session.id} to #{participant_user_ids.count} participants"
   end
 end

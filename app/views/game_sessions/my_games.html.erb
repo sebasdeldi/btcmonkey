@@ -1,3 +1,6 @@
+<%# Subscribe to real-time updates for my games %>
+<%= turbo_stream_from "my_games_#{current_user.id}" %>
+
 <div class="container">
   <div class="mb-8">
     <h1 class="mb-2">My Games</h1>

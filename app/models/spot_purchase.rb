@@ -23,6 +23,7 @@
 class SpotPurchase < ApplicationRecord
   belongs_to :user
   belongs_to :game_session
+  has_one :credit_ledger_entry, as: :source, dependent: :restrict_with_error
 
   # Validations
   validates :credits_spent, presence: true, numericality: { greater_than: 0, only_integer: true }

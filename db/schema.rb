@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_04_000005) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -29,6 +29,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_000005) do
     t.index ["invoice_id"], name: "index_btc_transactions_on_invoice_id", unique: true
     t.index ["status"], name: "index_btc_transactions_on_status"
     t.index ["user_id"], name: "index_btc_transactions_on_user_id"
+  end
+
+  create_table "credit_ledger_entries", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "movement_type", null: false
+    t.integer "amount", null: false
+    t.integer "balance_after", null: false
+    t.string "source_type"
+    t.bigint "source_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.text "description"
+    t.string "ip_address"
+    t.bigint "admin_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["metadata"], name: "index_credit_ledger_entries_on_metadata", using: :gin
+    t.index ["movement_type"], name: "index_credit_ledger_entries_on_movement_type"
+    t.index ["source_type", "source_id"], name: "index_credit_ledger_entries_on_source"
+    t.index ["user_id", "balance_after"], name: "index_credit_ledger_entries_on_user_id_and_balance_after"
+    t.index ["user_id", "created_at"], name: "index_credit_ledger_entries_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_credit_ledger_entries_on_user_id"
   end
 
   create_table "credit_packages", force: :cascade do |t|
@@ -99,6 +120,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_000005) do
 
   add_foreign_key "btc_transactions", "credit_packages"
   add_foreign_key "btc_transactions", "users"
+  add_foreign_key "credit_ledger_entries", "users"
+  add_foreign_key "credit_ledger_entries", "users", column: "admin_user_id"
   add_foreign_key "spot_purchases", "game_sessions"
   add_foreign_key "spot_purchases", "users"
   add_foreign_key "user_credit_wallets", "users"

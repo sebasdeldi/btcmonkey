@@ -1,9 +1,11 @@
-<% if flash.any? %>
-  <div class="container">
-    <% flash.each do |type, message| %>
-      <% next if message.to_s.length > 1000 %> <%# Skip suspiciously long messages that might contain HTML %>
-      <% variant = type == 'notice' ? 'success' : (type == 'alert' ? 'error' : type) %>
-      <%= render 'components/alert', variant: variant, message: sanitize(message, tags: []) %>
-    <% end %>
-  </div>
-<% end %>
+<div id="flash">
+  <% if flash.any? %>
+    <div class="container">
+      <% flash.each do |type, message| %>
+        <% next if message.to_s.length > 1000 %> <%# Skip suspiciously long messages that might contain HTML %>
+        <% variant = type == 'notice' ? 'success' : (type == 'alert' ? 'error' : type) %>
+        <%= render 'components/alert', variant: variant, message: sanitize(message, tags: []) %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

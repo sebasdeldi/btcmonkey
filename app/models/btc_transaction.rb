@@ -30,6 +30,7 @@
 class BtcTransaction < ApplicationRecord
   belongs_to :user
   belongs_to :credit_package
+  has_one :credit_ledger_entry, as: :source, dependent: :restrict_with_error
 
   # Transaction status enum with the following states:
   # - pending: Awaiting Bitcoin payment

@@ -50,11 +50,15 @@ class SpotsController < ApplicationController
         format.html { redirect_to game_session_path(@game_session) }
       end
     else
-      flash[:alert] = service.errors.join(", ")
-
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("flash", partial: "shared/flash") }
-        format.html { redirect_to game_session_path(@game_session) }
+        format.turbo_stream do
+          flash.now[:alert] = service.errors.join(", ")
+          render turbo_stream: turbo_stream.replace("flash", partial: "shared/flash_messages")
+        end
+        format.html do
+          flash[:alert] = service.errors.join(", ")
+          redirect_to game_session_path(@game_session)
+        end
       end
     end
   end

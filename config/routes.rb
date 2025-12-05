@@ -17,11 +17,6 @@ Rails.application.routes.draw do
     end
   end
 
-  # Admin namespace (future: add authentication)
-  namespace :admin do
-    resources :game_sessions, only: [:create, :index, :show, :update]
-  end
-
   # Root path
   root "game_sessions#index"
 

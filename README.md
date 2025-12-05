@@ -8,7 +8,9 @@ A Rails application that allows users to purchase credits using Bitcoin payments
 - [Architecture](#architecture)
 - [Design System](#design-system)
 - [Services & Clients](#services--clients)
+- [Credits Ledger System](#credits-ledger-system)
 - [Development](#development)
+- [Data Flow Examples](#data-flow-examples)
 
 ## Getting Started
 
@@ -68,9 +70,18 @@ app/
 │   ├── user_registration_service.rb
 │   ├── credit_purchase_service.rb
 │   ├── credit_wallet_service.rb
+│   ├── credit_ledger_service.rb
+│   ├── balance_verification_service.rb
+│   ├── spot_purchase_service.rb
 │   └── btc_pay_webhook_handler_service.rb
 ├── controllers/          # Rails controllers
 ├── models/               # ActiveRecord models
+│   ├── user.rb
+│   ├── user_credit_wallet.rb
+│   ├── credit_ledger_entry.rb
+│   ├── btc_transaction.rb
+│   ├── spot_purchase.rb
+│   └── ...
 ├── views/                # ERB templates
 │   ├── components/       # Reusable UI components
 │   └── ...
@@ -263,17 +274,53 @@ Manages all credit wallet operations.
 ```ruby
 service = CreditWalletService.new(user)
 
-# Add credits after payment
+# Add credits after payment (automatically records in ledger)
 service.add_credits(100, source: transaction)
+```
 
-# Lock credits for gameplay
-service.lock_credits(10)
+#### CreditLedgerService
 
-# Deduct credits after completion
-service.deduct_credits(10)
+Central service for recording all credit movements in the ledger.
 
-# Unlock credits if cancelled
-service.unlock_credits(10)
+```ruby
+# Records are created automatically by CreditWalletService and SpotPurchaseService
+# Manual recording (within a transaction):
+CreditLedgerService.record_entry(
+  user: user,
+  movement_type: :purchase,
+  amount: 100,
+  source: btc_transaction,
+  description: "Bitcoin payment received"
+)
+
+# Verify user's balance matches ledger
+CreditLedgerService.verify_balance(user) # => true/raises error
+
+# Deep audit by replaying ledger
+result = CreditLedgerService.audit_balance(user)
+# => { expected: 100, actual: 100, matches: true }
+```
+
+#### BalanceVerificationService
+
+Verifies credit balance integrity and detects fraud.
+
+```ruby
+# Verify single user
+service = BalanceVerificationService.new(user)
+service.verify # => true/false
+
+# Get transaction summary
+summary = service.transaction_summary
+# => { total_entries: 5, total_credits_added: 200, total_credits_spent: 50, ... }
+
+# Audit all users (use with caution)
+results = BalanceVerificationService.audit_all_users
+# => { total: 100, verified: 98, mismatches: 2, errors: 0 }
+
+# Detect anomalies
+anomalies = BalanceVerificationService.detect_anomalies(days: 7)
+# => [{ user_id: 123, reason: "High transaction volume", count: 52 }, ...]
 ```
 
 #### BtcPayWebhookHandlerService
@@ -395,6 +442,104 @@ class MyOperationService
 end
 ```
 
+## Credits Ledger System
+
+The application maintains a complete, immutable audit trail of all credit movements through the `credit_ledger_entries` table.
+
+### Overview
+
+Every credit transaction (purchases, spot debits, refunds) is automatically recorded in the ledger, providing:
+- **Full Auditability**: Complete transaction history for each user
+- **Anti-Fraud Detection**: Identify suspicious patterns and anomalies
+- **Debugging Clarity**: Trace any balance issue to specific transactions
+- **Immutability**: Entries can never be modified or deleted
+
+### Ledger Structure
+
+Each ledger entry contains:
+- **user_id**: User who performed the transaction
+- **movement_type**: Type of transaction (purchase, debit_spot, refund, admin_adjustment)
+- **amount**: Signed integer (positive for credits added, negative for debits)
+- **balance_after**: Snapshot of balance after this transaction
+- **source**: Polymorphic link to source record (BtcTransaction, SpotPurchase, etc.)
+- **metadata**: JSON field with transaction details
+- **description**: Human-readable description
+- **ip_address**: For fraud detection
+- **admin_user_id**: For admin adjustments
+
+### Movement Types
+
+| Type | Amount Sign | Description | Source |
+|------|-------------|-------------|--------|
+| `purchase` | Positive | Credits bought via Bitcoin | BtcTransaction |
+| `debit_spot` | Negative | Credits spent on game spots | SpotPurchase |
+| `refund` | Positive | Credits returned | Varies |
+| `admin_adjustment` | Either | Manual correction | None |
+
+### Automatic Recording
+
+Credit movements are automatically recorded by:
+- **CreditWalletService**: Records `purchase` entries when credits are added
+- **SpotPurchaseService**: Records `debit_spot` entries when spots are purchased
+
+### Rake Tasks
+
+```bash
+# Verify all user balances match their ledger
+rails credit_ledger:verify_all
+
+# Verify a specific user's balance
+rails credit_ledger:verify_user USER_ID=123
+
+# Detect suspicious activity patterns
+rails credit_ledger:detect_anomalies DAYS=7
+
+# One-time backfill from existing data (use with caution)
+rails credit_ledger:backfill
+```
+
+### Balance Verification
+
+```ruby
+# Quick verification (O(1))
+CreditLedgerService.verify_balance(user)
+# => true or raises BalanceMismatchError
+
+# Deep audit (O(n) - replays entire ledger)
+result = CreditLedgerService.audit_balance(user)
+# => { expected: 100, actual: 100, matches: true }
+```
+
+### Fraud Detection
+
+```ruby
+# Detect high transaction volume
+anomalies = BalanceVerificationService.detect_anomalies(days: 7)
+# Returns users with suspicious patterns:
+# - High transaction volume (>50 in period)
+# - Balance mismatches
+```
+
+### Data Flow
+
+1. **Bitcoin Payment**:
+   - User pays → BTCPay webhook → BtcPayWebhookHandlerService
+   - Calls CreditWalletService.add_credits → Records `purchase` entry
+   - Ledger entry links to BtcTransaction as source
+
+2. **Spot Purchase**:
+   - User buys spot → SpotPurchaseService.call
+   - Deducts credits → Creates SpotPurchase → Records `debit_spot` entry
+   - Ledger entry links to SpotPurchase as source
+
+### Key Features
+
+- **Immutable**: Entries use `before_update` and `before_destroy` hooks to prevent modification
+- **Balance Snapshots**: Each entry stores `balance_after` for O(1) verification
+- **Transaction Safety**: Ledger entries created within same database transaction as wallet updates
+- **Rollback Protection**: If ledger recording fails, entire transaction rolls back
+- **Metadata Tracking**: Stores rich context (invoice IDs, game session details, etc.)
+
 ## Development
 
 ### Running Tests
@@ -443,7 +588,9 @@ rails db:migrate
 5. **Testing**: Test all services and clients
 6. **Rails Best Practices**: Fat models, skinny controllers, service objects
 
-## Data Flow Example: Credit Purchase
+## Data Flow Examples
+
+### Credit Purchase Flow
 
 1. User selects package → `CreditPurchasesController`
 2. Controller calls → `CreditPurchaseService`
@@ -461,5 +608,40 @@ rails db:migrate
 14. Service calls → `BtcPayServerClient.get_invoice`
 15. Service updates transaction status
 16. Service calls → `CreditWalletService.add_credits`
-17. User receives credits
+17. **Wallet service records ledger entry** (within same transaction)
+18. User receives credits + ledger entry created
+
+### Spot Purchase Flow
+
+1. User clicks "Participate" → `SpotsController`
+2. Controller calls → `SpotPurchaseService.call`
+3. Service validates session availability and user credits
+4. Service locks game session (pessimistic lock)
+5. Service deducts credits from wallet
+6. Service creates `SpotPurchase` record
+7. **Service records ledger entry** (within same transaction)
+8. Service updates session status if full
+9. Service broadcasts real-time updates
+10. User receives spot + ledger entry created
+
+### Ledger Recording (Automatic)
+
+All credit movements are automatically recorded:
+
+**On Credit Addition**:
+```
+CreditWalletService.add_credits
+  → Updates wallet.total_credits
+  → CreditLedgerService.record_entry (movement_type: purchase)
+  → Creates immutable ledger entry with balance snapshot
+```
+
+**On Spot Purchase**:
+```
+SpotPurchaseService.call
+  → Updates wallet.total_credits
+  → Creates SpotPurchase
+  → CreditLedgerService.record_entry (movement_type: debit_spot)
+  → Creates immutable ledger entry with balance snapshot
+```
 
