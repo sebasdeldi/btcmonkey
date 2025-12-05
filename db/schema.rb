@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_01_065717) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_04_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,10 +42,42 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_065717) do
     t.index ["active"], name: "index_credit_packages_on_active"
   end
 
+  create_table "game_sessions", force: :cascade do |t|
+    t.string "game_session_type", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.integer "price_in_credits", null: false
+    t.integer "expected_award_in_credits", null: false
+    t.integer "max_spots", default: 10, null: false
+    t.integer "platform_fee_in_credits", null: false
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.string "status", default: "draft", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["finished_at"], name: "index_game_sessions_on_finished_at"
+    t.index ["game_session_type"], name: "index_game_sessions_on_game_session_type"
+    t.index ["started_at"], name: "index_game_sessions_on_started_at"
+    t.index ["status"], name: "index_game_sessions_on_status"
+  end
+
+  create_table "spot_purchases", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "game_session_id", null: false
+    t.integer "credits_spent", null: false
+    t.integer "spot_number", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_spot_purchases_on_created_at"
+    t.index ["game_session_id", "spot_number"], name: "index_spot_purchases_on_session_and_number", unique: true
+    t.index ["game_session_id", "user_id"], name: "index_spot_purchases_on_session_and_user", unique: true
+    t.index ["game_session_id"], name: "index_spot_purchases_on_game_session_id"
+    t.index ["user_id"], name: "index_spot_purchases_on_user_id"
+  end
+
   create_table "user_credit_wallets", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.integer "total_credits", default: 0, null: false
-    t.integer "locked_credits", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_user_credit_wallets_on_user_id", unique: true
@@ -67,5 +99,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_065717) do
 
   add_foreign_key "btc_transactions", "credit_packages"
   add_foreign_key "btc_transactions", "users"
+  add_foreign_key "spot_purchases", "game_sessions"
+  add_foreign_key "spot_purchases", "users"
   add_foreign_key "user_credit_wallets", "users"
 end

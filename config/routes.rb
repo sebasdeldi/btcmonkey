@@ -6,8 +6,19 @@ Rails.application.routes.draw do
   resources :credit_purchases, only: [:index, :create, :show]
   post "/webhooks/btcpay", to: "btc_pay_webhooks#create"
 
+  # Game sessions (user-facing)
+  resources :game_sessions, only: [:index, :show] do
+    # Nested spot purchases under game sessions
+    resources :spots, only: [:create]
+  end
+
+  # Admin namespace (future: add authentication)
+  namespace :admin do
+    resources :game_sessions, only: [:create, :index, :show, :update]
+  end
+
   # Root path
-  root "credit_purchases#index"
+  root "game_sessions#index"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

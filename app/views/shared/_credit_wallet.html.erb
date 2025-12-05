@@ -1,6 +1,6 @@
 <% if user_signed_in? && current_user.user_credit_wallet %>
   <% wallet = current_user.user_credit_wallet %>
   <div id="user-wallet-detail-<%= current_user.id %>" class="wallet-card flex items-center justify-between">
-    <%= render 'shared/wallet_balance', wallet: wallet, available_credits: wallet.total_credits - wallet.locked_credits %>
+    <%= render 'shared/wallet_balance', wallet: wallet, available_credits: wallet.total_credits %>
   </div>
 <% end %>

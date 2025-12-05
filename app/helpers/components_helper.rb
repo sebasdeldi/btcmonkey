@@ -48,12 +48,11 @@ module ComponentsHelper
   # Wallet Helper
   def available_credits(wallet)
     return 0 if wallet.nil?
-    wallet.total_credits - wallet.locked_credits
+    wallet.total_credits
   end
 
   def has_locked_credits?(wallet)
-    return false if wallet.nil?
-    wallet.locked_credits > 0
+    false # Credit locking mechanism removed
   end
 
   # Package Helper

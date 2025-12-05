@@ -1,20 +1,23 @@
 <%
-  variant ||= 'primary'
-  size ||= 'base'
-  full ||= false
-  type ||= 'button'
-  html_class ||= ''
+  variant = local_assigns.fetch(:variant, 'primary')
+  size = local_assigns.fetch(:size, 'base')
+  full = local_assigns.fetch(:full, false)
+  type = local_assigns.fetch(:type, 'button')
+  html_class = local_assigns.fetch(:html_class, '')
   classes = button_classes(variant: variant, size: size, full: full, html_class: html_class)
+
+  link_method = local_assigns.fetch(:method, :get)
+  link_data = local_assigns.fetch(:data, {})
 %>
 
-<% if defined?(url) && url.present? %>
+<% if local_assigns.key?(:url) && url.present? %>
   <%= link_to text, url,
       class: classes,
-      method: defined?(method) ? method : :get,
-      data: defined?(data) ? data : {} %>
+      method: link_method,
+      data: link_data %>
 <% else %>
   <%= button_tag text,
       type: type,
       class: classes,
-      data: defined?(data) ? data : {} %>
+      data: link_data %>
 <% end %>

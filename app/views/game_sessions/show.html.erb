@@ -1,0 +1,110 @@
+<%# Subscribe to Turbo Stream updates for this game session %>
+<%= turbo_stream_from "game_session_#{@game_session.id}" %>
+
+<div class="container py-8">
+  <%# Back Button %>
+  <%= link_to "← Back to All Games", game_sessions_path, class: "link mb-6 inline-block" %>
+
+  <div class="grid-auto gap-8">
+    <%# Main Content - Left Column %>
+    <div class="col-span-2">
+      <%# Game Session Header %>
+      <div class="card mb-6">
+        <div class="card-body">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <%= render 'components/badge', text: @game_session.game_session_type.upcase, variant: 'primary' %>
+              <h1 class="text-3xl font-bold mt-2"><%= @game_session.name %></h1>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-secondary">Prize Pool</p>
+              <p class="text-3xl font-bold text-success"><%= @game_session.expected_award_in_credits %> credits</p>
+            </div>
+          </div>
+
+          <p class="text-secondary text-lg mb-6"><%= @game_session.description %></p>
+
+          <%# Stats Grid %>
+          <div class="grid-3 gap-4 p-4 bg-light rounded">
+            <div>
+              <p class="text-xs text-secondary uppercase tracking-wide mb-1">Entry Cost</p>
+              <p class="text-xl font-bold"><%= @game_session.price_in_credits %> credits</p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary uppercase tracking-wide mb-1">Max Spots</p>
+              <p class="text-xl font-bold"><%= @game_session.max_spots %></p>
+            </div>
+            <div id="spots-remaining-section">
+              <p class="text-xs text-secondary uppercase tracking-wide mb-1">Available</p>
+              <p class="text-xl font-bold"><%= @game_session.spots_remaining %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Participants List %>
+      <div class="card">
+        <div class="card-body">
+          <h2 class="text-2xl font-bold mb-4">Participants</h2>
+
+          <div id="participants-list">
+            <%= render "participants_list", game_session: @game_session %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Sidebar - Right Column %>
+    <div class="col-span-1">
+      <%# Your Credits Card %>
+      <div class="card card-primary mb-6 sticky top-4">
+        <div class="card-body">
+          <h3 class="text-lg font-semibold mb-4">Your Credits</h3>
+          <p class="text-3xl font-bold mb-6" id="user-credits-display-<%= current_user.id %>">
+            <%= current_user.user_credit_wallet&.total_credits || 0 %>
+          </p>
+
+          <%# Participate Button %>
+          <div id="participate-button">
+            <%= render "participate_button", game_session: @game_session, user_has_purchased: @user_has_purchased %>
+          </div>
+
+          <div class="mt-4 pt-4 border-top">
+            <p class="text-sm text-secondary">
+              <%= link_to "Need more credits?", credit_purchases_path, class: "link" %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <%# Progress Card %>
+      <div class="card">
+        <div class="card-body">
+          <h3 class="text-lg font-semibold mb-4">Session Progress</h3>
+
+          <div id="progress-section">
+            <%= render "progress_bar", game_session: @game_session %>
+          </div>
+
+          <%# Session Info %>
+          <div class="mt-6 space-y-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-secondary">Status</span>
+              <span class="font-semibold capitalize"><%= @game_session.status %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-secondary">Started</span>
+              <span class="font-semibold"><%= @game_session.started_at.strftime("%b %d, %Y") %></span>
+            </div>
+            <% if @game_session.finished_at %>
+              <div class="flex justify-between">
+                <span class="text-secondary">Finished</span>
+                <span class="font-semibold"><%= @game_session.finished_at.strftime("%b %d, %Y") %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

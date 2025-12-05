@@ -1,0 +1,54 @@
+<%# Subscribe to real-time updates for game sessions %>
+<%= turbo_stream_from "game_sessions_index" %>
+
+<div class="container">
+  <div class="mb-8">
+    <h1 class="mb-2">Game Sessions</h1>
+    <p class="text-gray-600">Choose your game and win big! All sessions automatically recreate when full.</p>
+  </div>
+
+  <%# Display user's credit balance %>
+  <% if current_user&.user_credit_wallet %>
+    <div class="mb-8">
+      <%= render 'components/wallet_card', wallet: current_user.user_credit_wallet %>
+    </div>
+  <% end %>
+
+  <%# Group sessions by type %>
+  <%
+    sessions_by_type = @game_sessions.group_by(&:game_session_type)
+    game_types = [
+      { key: "win-100", title: "Win 100 Credits", description: "Low stakes, quick games" },
+      { key: "win-1000", title: "Win 1,000 Credits", description: "Medium stakes, bigger prizes" },
+      { key: "win-10000", title: "Win 10,000 Credits", description: "High stakes, massive rewards" }
+    ]
+  %>
+
+  <% game_types.each do |game_type| %>
+    <% sessions = sessions_by_type[game_type[:key]] || [] %>
+    <% next if sessions.empty? %>
+
+    <section class="mb-12">
+      <%# Section Header %>
+      <div class="mb-6">
+        <h2 class="mb-1"><%= game_type[:title] %></h2>
+        <p class="text-gray-600"><%= game_type[:description] %></p>
+      </div>
+
+      <%# Session Cards Grid %>
+      <div class="grid-auto">
+        <% sessions.each do |session| %>
+          <%= render 'components/game_session_card', game_session: session %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <%# Empty State %>
+  <% if @game_sessions.empty? %>
+    <div class="text-center py-8">
+      <p class="text-gray-600">No game sessions available right now.</p>
+      <p class="text-gray-500 mt-2">Check back soon for new games!</p>
+    </div>
+  <% end %>
+</div>

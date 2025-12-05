@@ -85,15 +85,14 @@ class UserRegistrationService
 
   # Create a credit wallet for the newly registered user.
   #
-  # The wallet is initialized with 0 total_credits and 0 locked_credits.
+  # The wallet is initialized with 0 total_credits.
   # If wallet creation fails, errors are collected and the transaction is rolled back.
   #
   # @return [void]
   # @raise [ActiveRecord::Rollback] if wallet creation fails
   def create_credit_wallet!
     wallet = @user.build_user_credit_wallet(
-      total_credits: 0,
-      locked_credits: 0
+      total_credits: 0
     )
 
     unless wallet.save

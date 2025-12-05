@@ -1,16 +1,11 @@
 <% return if wallet.nil? %>
 <% user ||= wallet.user %>
-<% available_credits ||= wallet.total_credits - wallet.locked_credits %>
+<% available_credits ||= wallet.total_credits %>
 
 <div id="user-wallet-card-<%= user.id %>" class="wallet-card">
   <p class="wallet-header">Your Current Balance</p>
   <p class="wallet-amount">
     <%= available_credits %>
-    <span class="wallet-amount-label">available credits</span>
+    <span class="wallet-amount-label">credits</span>
   </p>
-  <% if wallet.locked_credits > 0 %>
-    <p class="wallet-locked">
-      (<%= wallet.locked_credits %> credits locked)
-    </p>
-  <% end %>
 </div>

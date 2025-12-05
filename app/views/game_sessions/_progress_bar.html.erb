@@ -1,0 +1,10 @@
+<% progress = ((game_session.spots_taken.to_f / game_session.max_spots) * 100).round %>
+
+<div class="progress-bar mb-2">
+  <div class="progress-fill" style="width: <%= progress %>%"></div>
+</div>
+
+<div class="flex justify-between text-sm">
+  <span class="text-gray-600"><%= game_session.spots_taken %> of <%= game_session.max_spots %> spots taken</span>
+  <span class="font-semibold text-gray-900"><%= progress %>%</span>
+</div>

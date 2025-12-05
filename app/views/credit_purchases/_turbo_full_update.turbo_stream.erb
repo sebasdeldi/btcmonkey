@@ -9,6 +9,6 @@
 <%# Full update specific: wallet balance %>
 <%= turbo_stream.replace "user-wallet-detail-#{transaction.user_id}" do %>
   <div id="user-wallet-detail-#{transaction.user_id}" class="wallet-card flex items-center justify-between">
-    <%= render 'shared/wallet_balance', wallet: transaction.user.user_credit_wallet, available_credits: transaction.user.user_credit_wallet.total_credits - transaction.user.user_credit_wallet.locked_credits %>
+    <%= render 'shared/wallet_balance', wallet: transaction.user.user_credit_wallet, available_credits: transaction.user.user_credit_wallet.total_credits %>
   </div>
 <% end %>

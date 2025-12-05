@@ -2,21 +2,16 @@
 #
 # This service provides safe, transactional operations for manipulating user credits:
 # - Adding credits (e.g., after successful Bitcoin payment)
-# - Locking credits (e.g., when starting a game or activity)
-# - Unlocking credits (e.g., when canceling an activity)
-# - Deducting credits (e.g., when consuming credits for gameplay)
+#
+# NOTE: The credit locking mechanism (lock_credits, unlock_credits, deduct_credits)
+# has been deprecated and removed. Spot purchases now use direct credit deduction
+# since they are instant, non-refundable transactions.
 #
 # All operations are wrapped in database transactions to ensure atomicity.
-# The service maintains a distinction between total credits and locked credits:
-# - Total credits: All credits owned by the user
-# - Locked credits: Credits temporarily reserved (cannot be spent elsewhere)
-# - Available credits: total_credits - locked_credits (can be spent or locked)
 #
 # Typical credit lifecycle:
 # 1. User pays for credits → add_credits (increases total_credits)
-# 2. User starts game → lock_credits (increases locked_credits)
-# 3. Game ends → deduct_credits (decreases both locked and total)
-# 4. Game canceled → unlock_credits (decreases locked_credits only)
+# 2. User purchases spot → Direct deduction via SpotPurchaseService
 #
 # @example Adding credits after payment
 #   service = CreditWalletService.new(user)
@@ -87,114 +82,41 @@ class CreditWalletService
     success?
   end
 
-  # Lock credits for temporary use.
+  # DEPRECATED: Lock credits mechanism has been removed.
+  # Spot purchases now use direct deduction since they are instant transactions.
   #
-  # Increases locked_credits, making them unavailable for other activities.
-  # Fails if the user doesn't have enough available (unlocked) credits.
-  #
-  # @param amount [Integer] the number of credits to lock (must be > 0)
-  # @return [Boolean] true if credits were locked successfully, false otherwise
-  #
-  # @example Starting a game that costs 10 credits
-  #   service.lock_credits(10)
-  #   # wallet.locked_credits increases by 10
+  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
   def lock_credits(amount)
-    return false unless valid_amount?(amount)
-
-    ActiveRecord::Base.transaction do
-      available_credits = @wallet.total_credits - @wallet.locked_credits
-
-      if available_credits < amount
-        @errors << "Insufficient available credits"
-        raise ActiveRecord::Rollback
-      end
-
-      @wallet.locked_credits += amount
-
-      unless @wallet.save
-        @errors.concat(@wallet.errors.full_messages)
-        raise ActiveRecord::Rollback
-      end
-    end
-
-    success?
+    @errors << "DEPRECATED: lock_credits is no longer supported. Use direct deduction instead."
+    false
   end
 
-  # Unlock previously locked credits.
+  # DEPRECATED: Unlock credits mechanism has been removed.
+  # Spot purchases now use direct deduction since they are instant transactions.
   #
-  # Decreases locked_credits, making them available again.
-  # This is typically used when canceling an activity or refunding credits.
-  # Fails if trying to unlock more credits than are currently locked.
-  #
-  # @param amount [Integer] the number of credits to unlock (must be > 0)
-  # @return [Boolean] true if credits were unlocked successfully, false otherwise
-  #
-  # @example Canceling a game
-  #   service.unlock_credits(10)
-  #   # wallet.locked_credits decreases by 10
+  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
   def unlock_credits(amount)
-    return false unless valid_amount?(amount)
-
-    ActiveRecord::Base.transaction do
-      if @wallet.locked_credits < amount
-        @errors << "Cannot unlock more credits than currently locked"
-        raise ActiveRecord::Rollback
-      end
-
-      @wallet.locked_credits -= amount
-
-      unless @wallet.save
-        @errors.concat(@wallet.errors.full_messages)
-        raise ActiveRecord::Rollback
-      end
-    end
-
-    success?
+    @errors << "DEPRECATED: unlock_credits is no longer supported. Use direct deduction instead."
+    false
   end
 
-  # Deduct credits from the wallet after consumption.
+  # DEPRECATED: Deduct credits mechanism has been removed.
+  # Spot purchases now use direct deduction since they are instant transactions.
   #
-  # Decreases both locked_credits and total_credits by the specified amount.
-  # This represents actual consumption of credits (e.g., completing a game).
-  # The credits must already be locked before deduction.
-  #
-  # @param amount [Integer] the number of credits to deduct (must be > 0)
-  # @return [Boolean] true if credits were deducted successfully, false otherwise
-  #
-  # @example Completing a game that consumed 10 locked credits
-  #   service.deduct_credits(10)
-  #   # wallet.locked_credits decreases by 10
-  #   # wallet.total_credits decreases by 10
+  # @deprecated Use direct wallet manipulation in SpotPurchaseService instead
   def deduct_credits(amount)
-    return false unless valid_amount?(amount)
-
-    ActiveRecord::Base.transaction do
-      if @wallet.locked_credits < amount
-        @errors << "Cannot deduct more than locked credits"
-        raise ActiveRecord::Rollback
-      end
-
-      @wallet.locked_credits -= amount
-      @wallet.total_credits -= amount
-
-      unless @wallet.save
-        @errors.concat(@wallet.errors.full_messages)
-        raise ActiveRecord::Rollback
-      end
-    end
-
-    success?
+    @errors << "DEPRECATED: deduct_credits is no longer supported. Use direct deduction instead."
+    false
   end
 
-  # Calculate the number of available (unlocked) credits.
+  # Calculate the number of available credits (now simply returns total_credits).
   #
   # @return [Integer] the number of credits available for use
   #
   # @example
-  #   # If total_credits = 100 and locked_credits = 25
-  #   service.available_credits # => 75
+  #   service.available_credits # => 100
   def available_credits
-    @wallet.total_credits - @wallet.locked_credits
+    @wallet.total_credits
   end
 
   # Check if the last operation was successful.
@@ -231,7 +153,7 @@ class CreditWalletService
       locals: {
         user_id: @user.id,
         wallet: wallet,
-        available_credits: wallet.total_credits - wallet.locked_credits
+        available_credits: wallet.total_credits
       }
     )
 

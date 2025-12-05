@@ -12,6 +12,8 @@ class User < ApplicationRecord
   has_one :user_credit_wallet, dependent: :destroy
 
   has_many :btc_transactions, dependent: :destroy
+  has_many :spot_purchases, dependent: :destroy
+  has_many :game_sessions, through: :spot_purchases
 
   validates :username, presence: true, uniqueness: true
 end

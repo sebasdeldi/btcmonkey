@@ -13,7 +13,7 @@
         <% if user_signed_in? %>
           <% if current_user.user_credit_wallet %>
             <div id="user-wallet-navbar-<%= current_user.id %>" class="credit-badge">
-              <strong><%= current_user.user_credit_wallet.total_credits - current_user.user_credit_wallet.locked_credits %></strong>
+              <strong><%= current_user.user_credit_wallet.total_credits %></strong>
               <span>credits</span>
             </div>
           <% end %>

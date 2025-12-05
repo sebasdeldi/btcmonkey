@@ -31,7 +31,7 @@ module Users
     #
     # Uses UserRegistrationService to handle the business logic of:
     # 1. Creating a new User record with validations
-    # 2. Creating an associated UserCreditWallet (0 total_credits, 0 locked_credits)
+    # 2. Creating an associated UserCreditWallet (0 total_credits)
     # 3. Rolling back both if either fails
     #
     # On success:

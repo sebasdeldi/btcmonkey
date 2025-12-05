@@ -1,0 +1,46 @@
+<% unless game_session.nil? %>
+<div class="game-session-card <%= local_assigns.fetch(:html_class, '') %>" id="game-session-<%= game_session.id %>">
+  <div class="game-session-header">
+    <h3><%= game_session.name %></h3>
+    <div class="game-session-prize">
+      <%= game_session.expected_award_in_credits %>
+      <span class="game-session-prize-label">credits</span>
+    </div>
+  </div>
+
+  <div class="game-session-body">
+    <% if game_session.description.present? %>
+      <p class="game-session-description">
+        <%= game_session.description %>
+      </p>
+    <% end %>
+
+    <div class="game-session-stats">
+      <div class="game-session-stat">
+        <span class="game-session-stat-label">Entry Cost</span>
+        <span class="game-session-stat-value"><%= game_session.price_in_credits %> credits</span>
+      </div>
+      <div class="game-session-stat">
+        <span class="game-session-stat-label">Available Spots</span>
+        <span class="game-session-stat-value" id="spots-remaining-<%= game_session.id %>">
+          <%= game_session.spots_remaining %>/<%= game_session.max_spots %>
+        </span>
+      </div>
+    </div>
+
+    <div class="game-session-progress">
+      <div class="progress-bar">
+        <% progress = ((game_session.spots_taken.to_f / game_session.max_spots) * 100).round %>
+        <div class="progress-fill" style="width: <%= progress %>%" id="progress-bar-<%= game_session.id %>"></div>
+      </div>
+      <p class="progress-label"><%= progress %>% filled</p>
+    </div>
+
+    <%= render 'components/button',
+        text: 'View Details & Participate',
+        url: game_session_path(game_session),
+        variant: 'primary',
+        full: true %>
+  </div>
+</div>
+<% end %>

@@ -1,0 +1,17 @@
+<% if game_session.spot_purchases.any? %>
+  <div class="space-y-2">
+    <% game_session.spot_purchases.by_spot_number.each do |spot_purchase| %>
+      <div class="flex items-center justify-between py-2 px-4 bg-gray-50 rounded">
+        <div>
+          <span class="font-semibold">Spot #<%= spot_purchase.spot_number %></span>
+          <span class="text-gray-600 ml-2">@<%= spot_purchase.user.username %></span>
+        </div>
+        <span class="text-gray-500 text-sm">
+          <%= time_ago_in_words(spot_purchase.created_at) %> ago
+        </span>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <p class="text-gray-500 text-center py-4">No participants yet. Be the first!</p>
+<% end %>
