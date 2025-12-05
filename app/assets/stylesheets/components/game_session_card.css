@@ -18,6 +18,16 @@
   transform: translateY(-2px);
 }
 
+/* Highlighted variant for user's games */
+.game-session-card.card-highlight {
+  border-color: var(--color-primary-blue);
+  box-shadow: 0 0 0 1px var(--color-primary-blue);
+}
+
+.game-session-card.card-highlight:hover {
+  box-shadow: 0 0 0 2px var(--color-primary-blue), var(--shadow-lg);
+}
+
 /* Header */
 .game-session-header {
   background: linear-gradient(135deg, var(--color-primary-blue) 0%, var(--color-primary-navy) 100%);

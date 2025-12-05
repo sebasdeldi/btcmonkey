@@ -5,6 +5,8 @@
         <%= link_to "BTC Play", root_path, class: "nav-brand" %>
 
         <% if user_signed_in? %>
+          <%= link_to "All Games", game_sessions_path, class: "nav-link" %>
+          <%= link_to "My Games", my_games_game_sessions_path, class: "nav-link" %>
           <%= link_to "Buy Credits", credit_purchases_path, class: "nav-link" %>
         <% end %>
       </div>

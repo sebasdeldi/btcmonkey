@@ -25,6 +25,22 @@ class GameSessionsController < ApplicationController
                                  .includes(:spot_purchases)
   end
 
+  # Display user's active game sessions they're participating in.
+  #
+  # Shows both active and full sessions (not finished yet), with the
+  # user's spot purchase details.
+  #
+  # @return [void] renders the my_games view with @my_sessions
+  #
+  # GET /game_sessions/my_games
+  def my_games
+    @my_sessions = GameSession.joins(:spot_purchases)
+                               .where(spot_purchases: { user_id: current_user.id })
+                               .where.not(status: :finished)
+                               .includes(spot_purchases: :user)
+                               .order(started_at: :desc)
+  end
+
   # Display game session details and spot purchase status.
   #
   # Shows:

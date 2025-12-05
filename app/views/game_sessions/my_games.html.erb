@@ -1,0 +1,111 @@
+<div class="container">
+  <div class="mb-8">
+    <h1 class="mb-2">My Games</h1>
+    <p class="text-gray-600">Track your active game sessions and see where you stand</p>
+  </div>
+
+  <%# Display user's credit balance %>
+  <% if current_user&.user_credit_wallet %>
+    <div class="mb-8">
+      <%= render 'components/wallet_card', wallet: current_user.user_credit_wallet %>
+    </div>
+  <% end %>
+
+  <%# My Active Sessions %>
+  <% if @my_sessions.any? %>
+    <%
+      # Group by status for better organization
+      sessions_by_status = @my_sessions.group_by(&:status)
+      statuses = [
+        { key: "active", title: "Active Games", description: "Games still accepting participants", icon: "🎮" },
+        { key: "full", title: "Full Games", description: "Games ready to determine winners", icon: "🎯" }
+      ]
+    %>
+
+    <% statuses.each do |status_group| %>
+      <% sessions = sessions_by_status[status_group[:key]] || [] %>
+      <% next if sessions.empty? %>
+
+      <section class="mb-12">
+        <div class="mb-6">
+          <h2 class="mb-1"><%= status_group[:icon] %> <%= status_group[:title] %></h2>
+          <p class="text-gray-600"><%= status_group[:description] %></p>
+        </div>
+
+        <div class="grid-auto">
+          <% sessions.each do |session| %>
+            <% user_spot = session.spot_purchases.find { |sp| sp.user_id == current_user.id } %>
+            <div class="game-session-card card-highlight" id="game-session-<%= session.id %>">
+              <div class="game-session-header">
+                <h3><%= session.name %></h3>
+                <div class="game-session-prize">
+                  <%= session.expected_award_in_credits %>
+                  <span class="game-session-prize-label">credits</span>
+                </div>
+              </div>
+
+              <div class="game-session-body">
+                <%# User's spot info %>
+                <div class="mb-4 p-3 bg-blue-50 rounded">
+                  <p class="text-sm font-semibold text-primary-blue mb-1">Your Spot</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold">#<%= user_spot.spot_number %></span>
+                    <span class="text-sm text-gray-600">
+                      <%= time_ago_in_words(user_spot.created_at) %> ago
+                    </span>
+                  </div>
+                </div>
+
+                <% if session.description.present? %>
+                  <p class="game-session-description">
+                    <%= session.description %>
+                  </p>
+                <% end %>
+
+                <div class="game-session-stats">
+                  <div class="game-session-stat">
+                    <span class="game-session-stat-label">Entry Cost</span>
+                    <span class="game-session-stat-value"><%= session.price_in_credits %> credits</span>
+                  </div>
+                  <div class="game-session-stat">
+                    <span class="game-session-stat-label">Participants</span>
+                    <span class="game-session-stat-value">
+                      <%= session.spots_taken %>/<%= session.max_spots %>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="game-session-progress">
+                  <div class="progress-bar">
+                    <% progress = ((session.spots_taken.to_f / session.max_spots) * 100).round %>
+                    <div class="progress-fill" style="width: <%= progress %>%"></div>
+                  </div>
+                  <p class="progress-label"><%= progress %>% filled</p>
+                </div>
+
+                <%= render 'components/button',
+                    text: 'View Details',
+                    url: game_session_path(session),
+                    variant: 'primary',
+                    full: true %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  <% else %>
+    <%# Empty State %>
+    <div class="card text-center py-12">
+      <div class="card-body">
+        <div class="text-6xl mb-4">🎮</div>
+        <h3 class="text-2xl font-bold mb-2">No Active Games</h3>
+        <p class="text-gray-600 mb-6">You haven't joined any game sessions yet</p>
+        <%= render 'components/button',
+            text: 'Browse Available Games',
+            url: game_sessions_path,
+            variant: 'primary' %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -10,6 +10,11 @@ Rails.application.routes.draw do
   resources :game_sessions, only: [:index, :show] do
     # Nested spot purchases under game sessions
     resources :spots, only: [:create]
+
+    # My games collection route
+    collection do
+      get :my_games
+    end
   end
 
   # Admin namespace (future: add authentication)
