@@ -31,6 +31,9 @@
 #
 class GameSession < ApplicationRecord
   has_many :spot_purchases, dependent: :restrict_with_error
+  has_many :game_runs, dependent: :destroy
+  has_many :users, through: :spot_purchases
+  belongs_to :winner, class_name: 'User', optional: true
 
   # Status enum matching migration default
   # draft: Created but not available yet
@@ -51,6 +54,7 @@ class GameSession < ApplicationRecord
   validates :price_in_credits, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :expected_award_in_credits, presence: true, numericality: { greater_than_or_equal_to: 0, only_integer: true }
   validates :max_spots, presence: true, numericality: { greater_than: 0, only_integer: true }
+  validates :max_users, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :platform_fee_in_credits, presence: true, numericality: { greater_than_or_equal_to: 0, only_integer: true }
   validates :started_at, presence: true
 
@@ -61,12 +65,24 @@ class GameSession < ApplicationRecord
   scope :active, -> { where(status: "active") }
   scope :available_for_purchase, -> { active.where("(SELECT COUNT(*) FROM spot_purchases WHERE spot_purchases.game_session_id = game_sessions.id) < game_sessions.max_spots") }
   scope :by_recent, -> { order(started_at: :desc) }
+  scope :awaiting_completion, -> {
+    where(status: "full")
+      .where("completion_deadline IS NOT NULL")
+      .where("completion_deadline <= ?", Time.current)
+  }
+
+
+  def participants
+    spot_purchases.flat_map do |sp|
+      Array.new(sp.quantity) { sp.user }
+    end
+  end
 
   # Returns number of spots purchased
   #
   # @return [Integer] count of spot purchases
   def spots_taken
-    spot_purchases.count
+    spot_purchases.sum(:quantity)
   end
 
   # Returns number of spots remaining
@@ -96,6 +112,76 @@ class GameSession < ApplicationRecord
   def next_spot_number
     last_spot = spot_purchases.maximum(:spot_number) || 0
     last_spot + 1
+  end
+
+  # Returns count of unique users in session
+  #
+  # @return [Integer] count of distinct users
+  def unique_users_count
+    users.distinct.count
+  end
+
+  # Check if session has reached max users
+  #
+  # @return [Boolean] true if at max capacity
+  def at_max_users?
+    unique_users_count >= max_users
+  end
+
+  # Returns total number of game runs
+  #
+  # @return [Integer] total runs
+  def total_runs
+    game_runs.count
+  end
+
+  # Returns count of played runs
+  #
+  # @return [Integer] completed runs
+  def played_runs
+    game_runs.played.count
+  end
+
+  # Returns count of unplayed runs
+  #
+  # @return [Integer] pending runs
+  def unplayed_runs
+    game_runs.unplayed.count
+  end
+
+  # Check if all runs have been played
+  #
+  # @return [Boolean] true if no unplayed runs
+  def all_runs_played?
+    unplayed_runs == 0
+  end
+
+  # Calculate and set the winner based on highest score
+  # Sets winner, winning_score, status to finished, and finished_at
+  def calculate_winner!
+    return if finished?
+
+    highest_run = game_runs.played.order(score: :desc, completed_at: :asc).first
+    return unless highest_run
+
+    update!(
+      winner: highest_run.user,
+      winning_score: highest_run.score,
+      status: "finished",
+      finished_at: Time.current
+    )
+  end
+
+  # Set completion deadline when session fills up
+  # Deadline is 2.5 hours after last spot purchased
+  def set_completion_deadline!
+    return unless full?
+    return if completion_deadline.present?
+
+    update!(
+      last_spot_purchased_at: Time.current,
+      completion_deadline: 2.5.hours.from_now
+    )
   end
 
   private

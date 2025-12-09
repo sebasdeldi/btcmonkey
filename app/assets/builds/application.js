@@ -6777,13 +6777,13 @@ var AttributeObserver = class {
   }
 };
 function add(map, key, value) {
-  fetch(map, key).add(value);
+  fetch2(map, key).add(value);
 }
 function del(map, key, value) {
-  fetch(map, key).delete(value);
+  fetch2(map, key).delete(value);
   prune(map, key);
 }
-function fetch(map, key) {
+function fetch2(map, key) {
   let values = map.get(key);
   if (!values) {
     values = /* @__PURE__ */ new Set();
@@ -8646,6 +8646,34 @@ var application = Application.start();
 application.debug = false;
 window.Stimulus = application;
 
+// app/javascript/controllers/alert_controller.js
+var alert_controller_default = class extends Controller {
+  static values = {
+    autoDismiss: { type: Boolean, default: true },
+    dismissAfter: { type: Number, default: 7e3 }
+  };
+  connect() {
+    if (this.autoDismissValue) {
+      this.timeout = setTimeout(() => {
+        this.dismiss();
+      }, this.dismissAfterValue);
+    }
+  }
+  disconnect() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+  dismiss() {
+    this.element.style.transition = "opacity 0.3s ease-out, transform 0.3s ease-out";
+    this.element.style.opacity = "0";
+    this.element.style.transform = "translateY(-10px)";
+    setTimeout(() => {
+      this.element.remove();
+    }, 300);
+  }
+};
+
 // app/javascript/controllers/hello_controller.js
 var hello_controller_default = class extends Controller {
   connect() {
@@ -8653,8 +8681,347 @@ var hello_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/number_sequence_game_controller.js
+var number_sequence_game_controller_default = class extends Controller {
+  static targets = [
+    "instructions",
+    // Memorization phase container
+    "gameInterface",
+    // Main game interface (hidden initially)
+    "completionScreen",
+    // Completion screen (hidden initially)
+    "grid",
+    // 5x5 number grid container
+    "timer",
+    // Timer display element
+    "progress",
+    // Progress counter (X/25)
+    "nextNumber",
+    // Next number indicator
+    "finalTime",
+    // Final time display
+    "finalScore",
+    // Final score display
+    "completionTitle",
+    // Completion title (changes based on rank)
+    "rankMessage",
+    // Rank message
+    "leaderboardList"
+    // Leaderboard container
+  ];
+  static values = {
+    gridLayout: Object,
+    // { "1": [0, 0], "2": [1, 3], ... }
+    gameRunUrl: String,
+    // URL for form submission
+    currentUsername: String,
+    // Current user's username
+    leaderboard: Array
+    // Current top 5 leaderboard
+  };
+  connect() {
+    this.currentNumber = 1;
+    this.clickSequence = [];
+    this.clickTimestamps = [];
+    this.startTime = null;
+    this.timerInterval = null;
+    this.showMemorizationPhase();
+  }
+  disconnect() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+  }
+  // Phase 1: Show sequence instructions for 3 seconds
+  showMemorizationPhase() {
+    let countdown = 3;
+    const countdownEl = this.element.querySelector(".countdown-timer");
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      if (countdownEl) countdownEl.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        this.startGame();
+      }
+    }, 1e3);
+  }
+  // Phase 2: Start the game
+  startGame() {
+    this.instructionsTarget.style.display = "none";
+    this.gameInterfaceTarget.style.display = "block";
+    this.renderGrid();
+    this.startTime = performance.now();
+    this.startTimer();
+  }
+  // Render 5x5 grid with numbers in random positions
+  renderGrid() {
+    const gridLayout = this.gridLayoutValue;
+    const grid = this.gridTarget;
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 5; col++) {
+        const number = this.findNumberAtPosition(row, col, gridLayout);
+        const cell = document.createElement("div");
+        cell.className = "number-cell";
+        cell.dataset.number = number;
+        cell.textContent = number;
+        cell.addEventListener("click", (e) => this.handleCellClick(e));
+        grid.appendChild(cell);
+      }
+    }
+  }
+  // Find which number is at a given grid position
+  findNumberAtPosition(row, col, layout) {
+    for (const [number, position] of Object.entries(layout)) {
+      if (position[0] === row && position[1] === col) {
+        return parseInt(number);
+      }
+    }
+    return null;
+  }
+  // Handle cell click event
+  handleCellClick(event) {
+    const cell = event.currentTarget;
+    const clickedNumber = parseInt(cell.dataset.number);
+    if (cell.classList.contains("clicked")) return;
+    const timestamp = performance.now() - this.startTime;
+    if (clickedNumber === this.currentNumber) {
+      this.handleCorrectClick(cell, timestamp);
+    } else {
+      this.handleIncorrectClick(cell);
+    }
+  }
+  // Handle correct click (number in sequence)
+  handleCorrectClick(cell, timestamp) {
+    cell.classList.add("correct-flash", "clicked");
+    this.clickSequence.push(this.currentNumber);
+    this.clickTimestamps.push(timestamp);
+    this.currentNumber++;
+    this.updateProgress();
+    if (this.currentNumber > 25) {
+      this.completeGame();
+    }
+  }
+  // Handle incorrect click (wrong number)
+  handleIncorrectClick(cell) {
+    cell.classList.add("incorrect-flash");
+    setTimeout(() => {
+      cell.classList.remove("incorrect-flash");
+    }, 500);
+  }
+  // Update progress display
+  updateProgress() {
+    this.progressTarget.textContent = `${this.currentNumber - 1}/25`;
+    this.nextNumberTarget.textContent = this.currentNumber <= 25 ? this.currentNumber : "-";
+  }
+  // Start and update timer display
+  startTimer() {
+    this.timerInterval = setInterval(() => {
+      const elapsed = (performance.now() - this.startTime) / 1e3;
+      this.timerTarget.textContent = `${elapsed.toFixed(1)}s`;
+      if (elapsed > 600) {
+        this.timeoutGame();
+      }
+    }, 100);
+  }
+  // Handle game timeout (>10 minutes)
+  timeoutGame() {
+    clearInterval(this.timerInterval);
+    alert("Time limit exceeded (10 minutes). Game will be scored as 0.");
+    const timeTaken = 600.1;
+    this.submitScore(timeTaken);
+  }
+  // Game complete (all 25 numbers clicked)
+  completeGame() {
+    clearInterval(this.timerInterval);
+    const timeTaken = (performance.now() - this.startTime) / 1e3;
+    this.showCompletionScreen(timeTaken);
+  }
+  // Show completion screen with time and calculated score
+  showCompletionScreen(timeTaken) {
+    const score = this.calculateScore(timeTaken);
+    this.gameInterfaceTarget.style.display = "none";
+    this.completionScreenTarget.style.display = "block";
+    this.finalTimeTarget.textContent = `${timeTaken.toFixed(1)}s`;
+    this.finalScoreTarget.textContent = score;
+    this.updateLeaderboard(score);
+    setTimeout(() => {
+      this.submitScore(timeTaken);
+    }, 3e3);
+  }
+  // Update leaderboard display with new score
+  updateLeaderboard(newScore) {
+    const currentUser = this.currentUsernameValue;
+    const leaderboard = [...this.leaderboardValue];
+    leaderboard.push({ username: currentUser, score: newScore });
+    leaderboard.sort((a, b) => a.score - b.score);
+    const top5 = leaderboard.slice(0, 5);
+    const userRank = top5.findIndex((entry) => entry.username === currentUser && entry.score === newScore) + 1;
+    if (userRank === 1) {
+      this.completionTitleTarget.textContent = "\u{1F3C6} NEW RECORD!";
+      this.completionTitleTarget.style.color = "var(--color-warning)";
+      this.rankMessageTarget.textContent = "You're #1! Amazing performance!";
+      this.rankMessageTarget.style.color = "var(--color-warning)";
+      this.rankMessageTarget.style.fontWeight = "var(--font-weight-bold)";
+    } else if (userRank > 0 && userRank <= 5) {
+      this.completionTitleTarget.textContent = "\u{1F389} Great Job!";
+      this.rankMessageTarget.textContent = `You ranked #${userRank} in the top 5!`;
+    } else {
+      this.completionTitleTarget.textContent = "\u2705 Complete!";
+      this.rankMessageTarget.textContent = "Try again to beat the top scores!";
+    }
+    this.renderLeaderboard(top5, currentUser, newScore);
+  }
+  // Render the leaderboard list
+  renderLeaderboard(top5, currentUser, currentScore) {
+    const list = this.leaderboardListTarget;
+    list.innerHTML = "";
+    top5.forEach((entry, index) => {
+      const rank = index + 1;
+      const isCurrentUser = entry.username === currentUser && entry.score === currentScore;
+      const item = document.createElement("div");
+      item.className = `leaderboard-item ${isCurrentUser ? "current-user" : ""}`;
+      const rankBadge = document.createElement("span");
+      rankBadge.className = "leaderboard-rank";
+      if (rank === 1) rankBadge.textContent = "\u{1F947}";
+      else if (rank === 2) rankBadge.textContent = "\u{1F948}";
+      else if (rank === 3) rankBadge.textContent = "\u{1F949}";
+      else rankBadge.textContent = `#${rank}`;
+      const username = document.createElement("span");
+      username.className = "leaderboard-username";
+      username.textContent = entry.username;
+      if (isCurrentUser) username.textContent += " (You)";
+      const scoreDisplay = document.createElement("span");
+      scoreDisplay.className = "leaderboard-score";
+      scoreDisplay.textContent = `${entry.score}ms`;
+      item.appendChild(rankBadge);
+      item.appendChild(username);
+      item.appendChild(scoreDisplay);
+      list.appendChild(item);
+    });
+  }
+  // Calculate score client-side (mirrors server logic)
+  // Score = time in milliseconds (lower is better)
+  calculateScore(timeSeconds) {
+    const MAX_VALID_TIME = 600;
+    const timeMs = Math.round(timeSeconds * 1e3);
+    if (timeSeconds > MAX_VALID_TIME) {
+      return Math.round(MAX_VALID_TIME * 1e3);
+    }
+    return timeMs;
+  }
+  // Submit score to server via fetch API
+  submitScore(timeTaken) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch(`${this.gameRunUrlValue}/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify({
+        time_taken: timeTaken,
+        click_sequence: this.clickSequence,
+        click_timestamps: this.clickTimestamps,
+        started_at: new Date(Date.now() - timeTaken * 1e3).toISOString()
+      })
+    }).then((response) => {
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Submission failed");
+      }
+    }).catch((error2) => {
+      console.error("Game submission error:", error2);
+      alert("Failed to submit score. Please try again.");
+    });
+  }
+};
+
+// app/javascript/controllers/random_number_game_controller.js
+var random_number_game_controller_default = class extends Controller {
+  static targets = [
+    "gameArea",
+    "resultArea",
+    "playButton",
+    "scoreDisplay",
+    "scoreInput",
+    "form"
+  ];
+  /**
+   * Play button click handler.
+   *
+   * Starts the animated number generation sequence.
+   *
+   * @param {Event} event - The click event
+   */
+  play(event) {
+    event.preventDefault();
+    this.playButtonTarget.disabled = true;
+    this.playButtonTarget.textContent = "Generating...";
+    this.animateRandomNumbers();
+  }
+  /**
+   * Animates random numbers cycling through values.
+   *
+   * Shows 20 random values over ~1 second (50ms intervals),
+   * then displays the final score.
+   */
+  animateRandomNumbers() {
+    let count = 0;
+    const totalIterations = 20;
+    const interval = setInterval(() => {
+      const randomNum = Math.floor(Math.random() * 101);
+      this.scoreDisplayTarget.textContent = randomNum;
+      count++;
+      if (count >= totalIterations) {
+        clearInterval(interval);
+        this.showResult();
+      }
+    }, 50);
+  }
+  /**
+   * Shows the final result screen.
+   *
+   * Generates the final score, updates the UI,
+   * transitions from game area to result area,
+   * and automatically submits the score.
+   */
+  showResult() {
+    const finalScore = Math.floor(Math.random() * 101);
+    this.scoreDisplayTarget.textContent = finalScore;
+    this.scoreInputTarget.value = finalScore;
+    this.gameAreaTarget.classList.add("hidden");
+    this.resultAreaTarget.classList.remove("hidden");
+    setTimeout(() => {
+      this.formTarget.requestSubmit();
+    }, 1500);
+  }
+};
+
+// app/javascript/controllers/spot_purchase_controller.js
+var spot_purchase_controller_default = class extends Controller {
+  static targets = ["quantity", "totalDisplay"];
+  static values = {
+    pricePerSpot: Number
+  };
+  connect() {
+    this.updateTotal();
+  }
+  updateTotal() {
+    const quantity = parseInt(this.quantityTarget.value) || 1;
+    const total = quantity * this.pricePerSpotValue;
+    this.totalDisplayTarget.textContent = `Total: ${total} credits`;
+  }
+};
+
 // app/javascript/controllers/index.js
+application.register("alert", alert_controller_default);
 application.register("hello", hello_controller_default);
+application.register("number-sequence-game", number_sequence_game_controller_default);
+application.register("random-number-game", random_number_game_controller_default);
+application.register("spot-purchase", spot_purchase_controller_default);
 
 // app/javascript/application.js
 StreamActions.open_window = function() {

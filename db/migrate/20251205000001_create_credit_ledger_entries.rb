@@ -3,7 +3,7 @@ class CreateCreditLedgerEntries < ActiveRecord::Migration[8.0]
     create_table :credit_ledger_entries do |t|
       # Core fields
       t.references :user, null: false, foreign_key: true, index: true
-      t.string :movement_type, null: false  # enum: purchase, debit_spot, refund, admin_adjustment
+      t.string :movement_type, null: false  # enum: purchase, debit_spot, refund, admin_adjustment, prize
       t.integer :amount, null: false        # Signed: positive for credits, negative for debits
       t.integer :balance_after, null: false # Snapshot after this transaction
 

@@ -27,39 +27,33 @@ class SpotsController < ApplicationController
   # 2. Check user has sufficient credits
   # 3. Deduct credits from wallet
   # 4. Create spot purchase record
-  # 5. Update session status if full
-  # 6. Auto-create new session if last spot sold
+  # 5. Create GameRun records for each spot purchased
+  # 6. Update session status if full
+  # 7. Auto-create new session if last spot sold
+  #
+  # After successful purchase, redirects to first game run to play immediately.
   #
   # @return [void] redirects with success/error message
   #
   # POST /game_sessions/:game_session_id/spots
   def create
+    quantity = params[:quantity]&.to_i || 1
+
     service = SpotPurchaseService.new(
       user: current_user,
-      game_session: @game_session
+      game_session: @game_session,
+      quantity: quantity
     )
 
     if service.call
-      flash[:notice] = "Successfully purchased spot ##{service.spot_purchase.spot_number}!"
+      spot_purchase = service.spot_purchase
+      first_run = spot_purchase.game_runs.first
 
-      # Reload to get fresh data for turbo_stream response
-      @game_session.reload
-
-      respond_to do |format|
-        format.turbo_stream  # Renders create.turbo_stream.erb
-        format.html { redirect_to game_session_path(@game_session) }
-      end
+      flash[:notice] = "Purchased #{quantity} spot(s)! Let's play!"
+      redirect_to game_run_path(first_run)
     else
-      respond_to do |format|
-        format.turbo_stream do
-          flash.now[:alert] = service.errors.join(", ")
-          render turbo_stream: turbo_stream.replace("flash", partial: "shared/flash_messages")
-        end
-        format.html do
-          flash[:alert] = service.errors.join(", ")
-          redirect_to game_session_path(@game_session)
-        end
-      end
+      flash[:alert] = service.errors.join(", ")
+      redirect_to game_session_path(@game_session)
     end
   end
 
@@ -73,45 +67,5 @@ class SpotsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     flash[:alert] = "Game session not found"
     redirect_to root_path
-  end
-
-  # Broadcast wallet credit updates to the user's connected clients.
-  #
-  # Updates:
-  # - Navigation bar credit badge
-  # - Any wallet cards on the page
-  # - Credits display on game session page
-  #
-  # @return [void]
-  def broadcast_wallet_update
-    current_user.reload
-    wallet = current_user.user_credit_wallet
-
-    # Update navigation bar credits
-    Turbo::StreamsChannel.broadcast_replace_to(
-      current_user,
-      target: "user-wallet-navbar-#{current_user.id}",
-      html: <<~HTML
-        <div id="user-wallet-navbar-#{current_user.id}" class="credit-badge">
-          <strong>#{wallet.total_credits}</strong>
-          <span>credits</span>
-        </div>
-      HTML
-    )
-
-    # Update wallet card if present on the page
-    Turbo::StreamsChannel.broadcast_replace_to(
-      current_user,
-      target: "user-wallet-card-#{current_user.id}",
-      partial: "components/wallet_card",
-      locals: { wallet: wallet }
-    )
-
-    # Update credits display on game session show page
-    Turbo::StreamsChannel.broadcast_replace_to(
-      current_user,
-      target: "user-credits-display-#{current_user.id}",
-      html: wallet.total_credits.to_s
-    )
   end
 end

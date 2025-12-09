@@ -15,6 +15,8 @@ class User < ApplicationRecord
   has_many :spot_purchases, dependent: :destroy
   has_many :game_sessions, through: :spot_purchases
   has_many :credit_ledger_entries, dependent: :restrict_with_error
+  has_many :game_runs, dependent: :destroy
+  has_many :won_sessions, class_name: 'GameSession', foreign_key: 'winner_id'
 
   validates :username, presence: true, uniqueness: true
 end

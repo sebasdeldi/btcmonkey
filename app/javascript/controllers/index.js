@@ -4,5 +4,17 @@
 
 import { application } from "./application"
 
+import AlertController from "./alert_controller"
+application.register("alert", AlertController)
+
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
+
+import NumberSequenceGameController from "./number_sequence_game_controller"
+application.register("number-sequence-game", NumberSequenceGameController)
+
+import RandomNumberGameController from "./random_number_game_controller"
+application.register("random-number-game", RandomNumberGameController)
+
+import SpotPurchaseController from "./spot_purchase_controller"
+application.register("spot-purchase", SpotPurchaseController)

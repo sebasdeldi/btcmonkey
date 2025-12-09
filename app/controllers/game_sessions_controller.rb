@@ -48,6 +48,7 @@ class GameSessionsController < ApplicationController
   # - Spots taken/remaining
   # - List of participants (spot purchases)
   # - "Participate" button if session is accepting purchases
+  # - User's unplayed game runs if they have any
   #
   # @return [void] renders the show view with @game_session
   #
@@ -55,5 +56,6 @@ class GameSessionsController < ApplicationController
   def show
     @game_session = GameSession.includes(spot_purchases: :user).find(params[:id])
     @user_has_purchased = current_user.spot_purchases.exists?(game_session_id: @game_session.id)
+    @user_unplayed_runs = @game_session.game_runs.where(user: current_user).unplayed
   end
 end

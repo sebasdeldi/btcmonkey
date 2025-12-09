@@ -4,12 +4,16 @@
   # Parameters:
   #   message: Alert message (required)
   #   variant: 'success', 'warning', 'error', 'info' (default: 'info')
-  #   dismissible: true/false - adds close button (default: false)
+  #   dismissible: true/false - adds close button (default: true)
+  #   auto_dismiss: true/false - auto dismiss after delay (default: true)
+  #   dismiss_after: milliseconds before auto dismiss (default: 7000)
   #   html_class: additional CSS classes
 
   message ||= ''
   variant ||= 'info'
-  dismissible ||= false
+  dismissible = true if dismissible.nil?
+  auto_dismiss = true if auto_dismiss.nil?
+  dismiss_after ||= 7000
   html_class ||= ''
 
   css_classes = ['alert', "alert-#{variant}"]
@@ -18,10 +22,19 @@
   classes = css_classes.join(' ')
 %>
 
-<div class="<%= classes %>" role="alert">
-  <%= message %>
+<div class="<%= classes %>"
+     role="alert"
+     data-controller="alert"
+     data-alert-auto-dismiss-value="<%= auto_dismiss %>"
+     data-alert-dismiss-after-value="<%= dismiss_after %>">
+  <span class="alert-message"><%= message %></span>
 
   <% if dismissible %>
-    <button type="button" class="alert-close" aria-label="Close">×</button>
+    <button type="button"
+            class="alert-close"
+            aria-label="Close"
+            data-action="click->alert#dismiss">
+      ×
+    </button>
   <% end %>
 </div>
