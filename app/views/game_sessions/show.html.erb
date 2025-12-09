@@ -1,6 +1,3 @@
-<%# Subscribe to Turbo Stream updates for this game session %>
-<%= turbo_stream_from "game_session_#{@game_session.id}" %>
-
 <div class="container py-8">
   <%# Back Button %>
   <%= link_to "← Back to All Games", game_sessions_path, class: "link mb-6 inline-block" %>
@@ -63,6 +60,19 @@
           <p class="text-3xl font-bold mb-6" id="user-credits-display-<%= current_user.id %>">
             <%= current_user.user_credit_wallet&.total_credits || 0 %>
           </p>
+
+          <%# Unplayed Runs Section %>
+          <% if @user_unplayed_runs.any? %>
+            <div class="mb-6 p-4 rounded" style="background-color: var(--color-success-light, #d1fae5); border: 1px solid var(--color-success, #10b981);">
+              <h4 class="font-semibold mb-2" style="color: var(--color-success-dark, #065f46);">
+                You have <%= @user_unplayed_runs.count %> unplayed <%= 'run'.pluralize(@user_unplayed_runs.count) %>!
+              </h4>
+              <p class="text-sm mb-3" style="color: var(--color-success-dark, #065f46);">
+                Resume playing to compete for the prize
+              </p>
+              <%= link_to "Play Now", game_run_path(@user_unplayed_runs.first), class: "btn btn-primary btn-full" %>
+            </div>
+          <% end %>
 
           <%# Participate Button %>
           <div id="participate-button">

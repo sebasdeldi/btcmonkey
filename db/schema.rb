@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -63,6 +63,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
     t.index ["active"], name: "index_credit_packages_on_active"
   end
 
+  create_table "game_runs", force: :cascade do |t|
+    t.string "seed", null: false
+    t.bigint "user_id", null: false
+    t.bigint "game_session_id", null: false
+    t.bigint "spot_purchase_id", null: false
+    t.jsonb "result_metadata", default: {}
+    t.integer "score"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed_at"], name: "index_game_runs_on_completed_at"
+    t.index ["game_session_id", "user_id"], name: "index_game_runs_on_game_session_id_and_user_id"
+    t.index ["game_session_id"], name: "index_game_runs_on_game_session_id"
+    t.index ["seed"], name: "index_game_runs_on_seed", unique: true
+    t.index ["spot_purchase_id"], name: "index_game_runs_on_spot_purchase_id"
+    t.index ["user_id"], name: "index_game_runs_on_user_id"
+  end
+
   create_table "game_sessions", force: :cascade do |t|
     t.string "game_session_type", null: false
     t.string "name", null: false
@@ -76,10 +94,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
     t.string "status", default: "draft", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "max_users", default: 10, null: false
+    t.datetime "completion_deadline"
+    t.bigint "winner_id"
+    t.integer "winning_score"
+    t.datetime "last_spot_purchased_at"
     t.index ["finished_at"], name: "index_game_sessions_on_finished_at"
     t.index ["game_session_type"], name: "index_game_sessions_on_game_session_type"
     t.index ["started_at"], name: "index_game_sessions_on_started_at"
     t.index ["status"], name: "index_game_sessions_on_status"
+    t.index ["winner_id"], name: "index_game_sessions_on_winner_id"
   end
 
   create_table "spot_purchases", force: :cascade do |t|
@@ -89,9 +113,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
     t.integer "spot_number", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "quantity", default: 1, null: false
     t.index ["created_at"], name: "index_spot_purchases_on_created_at"
     t.index ["game_session_id", "spot_number"], name: "index_spot_purchases_on_session_and_number", unique: true
-    t.index ["game_session_id", "user_id"], name: "index_spot_purchases_on_session_and_user", unique: true
     t.index ["game_session_id"], name: "index_spot_purchases_on_game_session_id"
     t.index ["user_id"], name: "index_spot_purchases_on_user_id"
   end
@@ -122,6 +146,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_000001) do
   add_foreign_key "btc_transactions", "users"
   add_foreign_key "credit_ledger_entries", "users"
   add_foreign_key "credit_ledger_entries", "users", column: "admin_user_id"
+  add_foreign_key "game_runs", "game_sessions"
+  add_foreign_key "game_runs", "spot_purchases"
+  add_foreign_key "game_runs", "users"
+  add_foreign_key "game_sessions", "users", column: "winner_id"
   add_foreign_key "spot_purchases", "game_sessions"
   add_foreign_key "spot_purchases", "users"
   add_foreign_key "user_credit_wallets", "users"

@@ -17,6 +17,13 @@ Rails.application.routes.draw do
     end
   end
 
+  # Game runs (individual playable instances)
+  resources :game_runs, only: [:show] do
+    member do
+      post :complete
+    end
+  end
+
   # Root path
   root "game_sessions#index"
 

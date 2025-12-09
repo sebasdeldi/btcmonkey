@@ -24,16 +24,24 @@ class SpotPurchase < ApplicationRecord
   belongs_to :user
   belongs_to :game_session
   has_one :credit_ledger_entry, as: :source, dependent: :restrict_with_error
+  has_many :game_runs, dependent: :destroy
 
   # Validations
   validates :credits_spent, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :spot_number, presence: true, numericality: { greater_than: 0, only_integer: true }
+  validates :quantity, presence: true, numericality: {
+    only_integer: true,
+    greater_than: 0,
+    less_than_or_equal_to: 10
+  }
 
   # Ensure spot number is within valid range for the session
   validate :spot_number_within_max_spots
 
+  # Create game runs after spot purchase is created
+  after_create :create_game_runs
+
   # Scopes
-  scope :by_spot_number, -> { order(:spot_number) }
   scope :recent_first, -> { order(created_at: :desc) }
 
   private
@@ -47,6 +55,15 @@ class SpotPurchase < ApplicationRecord
 
     if spot_number < 1
       errors.add(:spot_number, "must be at least 1")
+    end
+  end
+
+  def create_game_runs
+    quantity.times do
+      game_runs.create!(
+        user: user,
+        game_session: game_session
+      )
     end
   end
 end

@@ -42,6 +42,7 @@ class CreditLedgerEntry < ApplicationRecord
   # - admin_adjustment: Manual correction by admin
   enum :movement_type, {
     purchase: "purchase",
+    prize: "prize",
     debit_spot: "debit_spot",
     refund: "refund",
     admin_adjustment: "admin_adjustment"
@@ -144,6 +145,8 @@ class CreditLedgerEntry < ApplicationRecord
       "Credit refund"
     when "admin_adjustment"
       "Admin adjustment"
+    when "prize"
+      "Credits won as a contest prize"
     end
   end
 end

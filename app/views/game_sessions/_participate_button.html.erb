@@ -1,12 +1,28 @@
-<% if user_has_purchased %>
-  <%= render 'components/badge', text: 'Already Participating', variant: 'success' %>
-<% elsif !game_session.accepting_purchases? %>
+<% if !game_session.accepting_purchases? %>
   <%= render 'components/badge', text: 'Session Full', variant: 'gray' %>
 <% else %>
-  <%= button_to game_session_spots_path(game_session),
-      method: :post,
-      class: 'btn btn-primary btn-full',
-      data: { turbo: true } do %>
-    Participate (<%= game_session.price_in_credits %> credits)
+  <%= form_with url: game_session_spots_path(game_session),
+                method: :post,
+                data: {
+                  controller: "spot-purchase",
+                  spot_purchase_price_per_spot_value: game_session.price_in_credits,
+                  turbo: true
+                } do |f| %>
+    <div class="mb-4">
+      <%= f.label :quantity, "Number of spots", class: "form-label" %>
+      <%= f.select :quantity,
+          spot_quantity_options(game_session),
+          {},
+          class: "form-input",
+          data: {
+            spot_purchase_target: "quantity",
+            action: "change->spot-purchase#updateTotal"
+          } %>
+      <p class="form-helper" data-spot-purchase-target="totalDisplay">
+        Total: <%= game_session.price_in_credits %> credits
+      </p>
+    </div>
+
+    <%= f.submit "Buy Spots", class: "btn btn-primary btn-full" %>
   <% end %>
 <% end %>

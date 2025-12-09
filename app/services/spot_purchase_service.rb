@@ -51,39 +51,49 @@ class SpotPurchaseService
   #
   # @param user [User] the user purchasing the spot
   # @param game_session [GameSession] the session to purchase a spot in
-  def initialize(user:, game_session:)
+  # @param quantity [Integer] number of spots to purchase (default: 1)
+  def initialize(user:, game_session:, quantity: 1)
     @user = user
     @game_session = game_session
+    @quantity = quantity
     @errors = []
   end
 
   # Execute the spot purchase process.
   #
-  # Performs validations, deducts credits, creates spot purchase, and updates
-  # game session status if needed. All within a database transaction.
-  # Broadcasts are performed after successful transaction commit.
+  # Performs validations, deducts credits, creates spot purchase, creates game runs,
+  # and updates game session status if needed. All within a database transaction.
   #
   # @return [Boolean] true if purchase succeeds, false otherwise
   def call
     validate_purchase
     return false unless @errors.empty?
 
-    ActiveRecord::Base.transaction do
-      # Lock the game session to prevent race conditions
-      @game_session = GameSession.lock.find(@game_session.id)
+    begin
+      ActiveRecord::Base.transaction do
+        # Lock the game session to prevent race conditions
+        @game_session = GameSession.lock.find(@game_session.id)
 
-      # Re-validate after acquiring lock (another transaction may have changed state)
-      validate_session_availability
-      return false unless @errors.empty?
+        # Re-validate after acquiring lock (another transaction may have changed state)
+        validate_session_availability
+        return false unless @errors.empty?
 
-      deduct_credits
-      create_spot_purchase_without_broadcast
-      record_spot_debit_in_ledger
-      update_session_status_if_full
+        deduct_credits
+        create_spot_purchase_without_broadcast
+        record_spot_debit_in_ledger
+        update_session_status_if_full
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      @errors << "Failed to create game runs: #{e.message}"
+      Rails.logger.error("SpotPurchaseService transaction failed: #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      return false
+    rescue StandardError => e
+      @errors << "Purchase failed: #{e.message}"
+      Rails.logger.error("SpotPurchaseService unexpected error: #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      return false
     end
-
-    # Broadcast updates after successful transaction commit
-    broadcast_spot_purchase_updates if success?
 
     success?
   end
@@ -119,17 +129,24 @@ class SpotPurchaseService
       @errors << "Game session is not active"
     end
 
-    unless @game_session.spots_remaining > 0
-      @errors << "Game session has no available spots"
+    unless @game_session.spots_remaining >= @quantity
+      @errors << "Not enough spots available. Only #{@game_session.spots_remaining} remaining."
     end
   end
 
   # Validate user hasn't already purchased in this session.
+  # REMOVED: Now users can purchase multiple spots
   #
   # @return [void]
   def validate_user_eligibility
-    if @user.spot_purchases.exists?(game_session_id: @game_session.id)
-      @errors << "You have already purchased a spot in this session"
+    # Users can now purchase unlimited spots - no validation needed
+    if @quantity <= 0
+      @errors << "Quantity must be greater than 0"
+    end
+
+    # TODO: Make this dynamic
+    if @quantity > 10
+      @errors << "Cannot purchase more than 10 spots at once"
     end
   end
 
@@ -138,9 +155,10 @@ class SpotPurchaseService
   # @return [void]
   def validate_sufficient_credits
     wallet = @user.user_credit_wallet
+    total_cost = @game_session.price_in_credits * @quantity
 
-    if wallet.nil? || wallet.total_credits < @game_session.price_in_credits
-      @errors << "Insufficient available credits"
+    if wallet.nil? || wallet.total_credits < total_cost
+      @errors << "Insufficient credits. You need #{total_cost} credits but have #{wallet&.total_credits || 0}."
     end
   end
 
@@ -153,8 +171,9 @@ class SpotPurchaseService
   # @raise [ActiveRecord::Rollback] if credit deduction fails
   def deduct_credits
     wallet = @user.user_credit_wallet
+    total_cost = @game_session.price_in_credits * @quantity
 
-    new_total = wallet.total_credits - @game_session.price_in_credits
+    new_total = wallet.total_credits - total_cost
 
     if new_total < 0
       @errors << "Insufficient credits for purchase"
@@ -170,8 +189,8 @@ class SpotPurchaseService
 
     # Store pending ledger data (will be recorded after spot_purchase is created)
     @pending_ledger_recording = {
-      amount: -@game_session.price_in_credits,
-      description: "Spot purchase in #{@game_session.name}"
+      amount: -total_cost,
+      description: "Purchased #{@quantity} spot(s) in #{@game_session.name}"
     }
   end
 
@@ -183,10 +202,13 @@ class SpotPurchaseService
   # @return [void]
   # @raise [ActiveRecord::Rollback] if spot purchase creation fails
   def create_spot_purchase_without_broadcast
+    total_cost = @game_session.price_in_credits * @quantity
+
     @spot_purchase = @user.spot_purchases.build(
       game_session: @game_session,
-      credits_spent: @game_session.price_in_credits,
-      spot_number: @game_session.next_spot_number
+      credits_spent: total_cost,
+      spot_number: @game_session.next_spot_number,
+      quantity: @quantity
     )
 
     unless @spot_purchase.save
@@ -214,7 +236,9 @@ class SpotPurchaseService
         metadata: {
           game_session_id: @game_session.id,
           game_session_type: @game_session.game_session_type,
-          spot_number: @spot_purchase.spot_number
+          spot_number: @spot_purchase.spot_number,
+          quantity: @quantity,
+          price_per_spot: @game_session.price_in_credits
         }
       )
     rescue CreditLedgerService::BalanceMismatchError => e
@@ -230,6 +254,7 @@ class SpotPurchaseService
 
   # Update game session status to 'full' if all spots are sold.
   # Automatically creates new identical session when last spot sold.
+  # Sets completion deadline when session becomes full.
   #
   # @return [void]
   # @raise [ActiveRecord::Rollback] if status update fails
@@ -244,6 +269,9 @@ class SpotPurchaseService
         @errors.concat(@game_session.errors.full_messages)
         raise ActiveRecord::Rollback
       end
+
+      # Set completion deadline (2.5 hours from now)
+      @game_session.set_completion_deadline!
 
       # Auto-create new session with identical settings
       recreate_game_session
@@ -264,6 +292,7 @@ class SpotPurchaseService
       price_in_credits: @game_session.price_in_credits,
       expected_award_in_credits: @game_session.expected_award_in_credits,
       max_spots: @game_session.max_spots,
+      max_users: @game_session.max_users,
       platform_fee_in_credits: @game_session.platform_fee_in_credits,
       started_at: Time.current,
       status: :active
@@ -275,100 +304,5 @@ class SpotPurchaseService
     # Log but don't fail the purchase
     Rails.logger.error "Failed to auto-create game session: #{e.message}"
     nil
-  end
-
-  # Broadcast real-time updates to all connected clients via Turbo Streams.
-  #
-  # Updates the following UI elements:
-  # - Participants list (adds new participant)
-  # - Progress bar (updates percentage)
-  # - Spots remaining counter
-  # - Participate button state (if session becomes full)
-  # - Game cards on index and my_games pages
-  #
-  # @return [void]
-  def broadcast_spot_purchase_updates
-    # Reload to get fresh data with associations
-    @game_session.reload
-    @game_session.spot_purchases.reload
-
-    # Broadcast to game session show page
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "game_session_#{@game_session.id}",
-      target: "participants-list",
-      partial: "game_sessions/participants_list",
-      locals: { game_session: @game_session }
-    )
-
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "game_session_#{@game_session.id}",
-      target: "progress-section",
-      partial: "game_sessions/progress_bar",
-      locals: { game_session: @game_session }
-    )
-
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "game_session_#{@game_session.id}",
-      target: "spots-remaining-section",
-      html: <<~HTML
-        <p class="text-xs text-secondary uppercase tracking-wide mb-1">Available</p>
-        <p class="text-xl font-bold">#{@game_session.spots_remaining}</p>
-      HTML
-    )
-
-    # Update participate button if user is viewing
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "game_session_#{@game_session.id}",
-      target: "participate-button",
-      partial: "game_sessions/participate_button",
-      locals: {
-        game_session: @game_session,
-        user_has_purchased: @user.spot_purchases.exists?(game_session_id: @game_session.id)
-      }
-    )
-
-    # Update the game session card on index page for all users
-    broadcast_card_updates
-
-    # Update the game session card on my_games page for all participants
-    broadcast_my_games_updates
-  end
-
-  # Broadcast updates to game session card on index page.
-  #
-  # Updates the entire game session card on the index page
-  # visible to all users.
-  #
-  # @return [void]
-  def broadcast_card_updates
-    # Replace the entire game session card to update all dynamic content
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "game_sessions_index",
-      target: "game-session-#{@game_session.id}",
-      partial: "components/game_session_card",
-      locals: { game_session: @game_session }
-    )
-  end
-
-  # Broadcast updates to my_games page for all participants in this session.
-  #
-  # Each user who has purchased a spot gets their card updated on their my_games page.
-  #
-  # @return [void]
-  def broadcast_my_games_updates
-    # Get all users who have purchased spots in this session
-    participant_user_ids = @game_session.spot_purchases.pluck(:user_id).uniq
-
-    # Broadcast to each participant's my_games page
-    participant_user_ids.each do |user_id|
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "my_games_#{user_id}",
-        target: "game-session-#{@game_session.id}",
-        partial: "components/game_session_card",
-        locals: { game_session: @game_session }
-      )
-    end
-
-    Rails.logger.info "Broadcasted my_games updates for session #{@game_session.id} to #{participant_user_ids.count} participants"
   end
 end
