@@ -73,3 +73,4 @@ gem "httparty"
 
 # Rate limiting and throttling [https://github.com/rack/rack-attack]
 gem "rack-attack"
+

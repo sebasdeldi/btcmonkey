@@ -4,11 +4,6 @@ class GameRun < ApplicationRecord
   belongs_to :spot_purchase
 
   validates :seed, presence: true
-  validates :score, numericality: {
-    only_integer: true,
-    greater_than_or_equal_to: 0,
-    less_than_or_equal_to: 100
-  }, allow_nil: true
 
   scope :unplayed, -> { where(completed_at: nil) }
   scope :played, -> { where.not(completed_at: nil) }

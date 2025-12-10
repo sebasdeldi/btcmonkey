@@ -33,13 +33,15 @@ class GameRunsController < ApplicationController
 
     # Get top 5 scores for leaderboard (lower score is better)
     # Only include completed runs with valid scores
+    # Using joins and pluck to avoid N+1 queries
     @leaderboard = @game_session.game_runs
       .played
       .where.not(score: nil)
       .order(score: :asc) # Lower milliseconds is better
       .limit(5)
-      .includes(:user)
-      .map { |run| { username: run.user.username, score: run.score } }
+      .joins(:user)
+      .pluck("users.username", :score)
+      .map { |username, score| { username: username, score: score } }
   end
 
   # POST /game_runs/:id/complete
@@ -54,7 +56,12 @@ class GameRunsController < ApplicationController
   # @param started_at [String] ISO8601 timestamp of game start
   # @return [void]
   def complete
-    # Parse JSON parameters
+    # Validate and parse input parameters
+    unless validate_score_params
+      flash[:alert] = "Invalid game submission data."
+      redirect_to game_run_path(@game_run) and return
+    end
+
     time_taken = params[:time_taken].to_f
     click_sequence = params[:click_sequence] || []
     click_timestamps = params[:click_timestamps] || []
@@ -109,6 +116,29 @@ class GameRunsController < ApplicationController
   end
 
   private
+
+  # Validate score submission parameters to prevent malicious input.
+  #
+  # @return [Boolean] true if all parameters are valid
+  def validate_score_params
+    # Validate time_taken is a numeric value
+    return false unless params[:time_taken].present?
+    return false unless params[:time_taken].to_s =~ /\A\d+(\.\d+)?\z/
+
+    # Validate click_sequence is an array of integers
+    return false unless params[:click_sequence].is_a?(Array)
+    return false unless params[:click_sequence].all? { |n| n.is_a?(Integer) || n.to_s =~ /\A\d+\z/ }
+
+    # Validate click_timestamps is an array of numbers
+    return false unless params[:click_timestamps].is_a?(Array)
+    return false unless params[:click_timestamps].all? { |n| n.is_a?(Numeric) || n.to_s =~ /\A\d+(\.\d+)?\z/ }
+
+    # Validate arrays have reasonable lengths (25 clicks expected)
+    return false if params[:click_sequence].length > 100
+    return false if params[:click_timestamps].length > 100
+
+    true
+  end
 
   # Find the game run by ID.
   #

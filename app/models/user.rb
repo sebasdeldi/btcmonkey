@@ -18,5 +18,12 @@ class User < ApplicationRecord
   has_many :game_runs, dependent: :destroy
   has_many :won_sessions, class_name: 'GameSession', foreign_key: 'winner_id'
 
-  validates :username, presence: true, uniqueness: true
+  validates :username,
+    presence: true,
+    uniqueness: { case_sensitive: false },
+    length: { minimum: 3, maximum: 30 },
+    format: {
+      with: /\A[a-zA-Z0-9_-]+\z/,
+      message: "only allows letters, numbers, underscores, and hyphens"
+    }
 end

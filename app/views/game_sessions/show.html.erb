@@ -10,12 +10,14 @@
         <div class="card-body">
           <div class="flex justify-between items-start mb-4">
             <div>
-              <%= render 'components/badge', text: @game_session.game_session_type.upcase, variant: 'primary' %>
-              <h1 class="text-3xl font-bold mt-2"><%= @game_session.name %></h1>
+              <% if @game_session&.game_session_type.present? %>
+                <%= render 'components/badge', text: @game_session.game_session_type.upcase, variant: 'primary' %>
+              <% end %>
+              <h1 class="text-3xl font-bold mt-2"><%= @game_session&.name || 'Game Session' %></h1>
             </div>
             <div class="text-right">
               <p class="text-sm text-secondary">Prize Pool</p>
-              <p class="text-3xl font-bold text-success"><%= @game_session.expected_award_in_credits %> credits</p>
+              <p class="text-3xl font-bold text-success"><%= @game_session&.expected_award_in_credits || 0 %> credits</p>
             </div>
           </div>
 
@@ -63,11 +65,11 @@
 
           <%# Unplayed Runs Section %>
           <% if @user_unplayed_runs.any? %>
-            <div class="mb-6 p-4 rounded" style="background-color: var(--color-success-light, #d1fae5); border: 1px solid var(--color-success, #10b981);">
-              <h4 class="font-semibold mb-2" style="color: var(--color-success-dark, #065f46);">
+            <div class="alert-unplayed-runs">
+              <h4 class="alert-unplayed-runs-title">
                 You have <%= @user_unplayed_runs.count %> unplayed <%= 'run'.pluralize(@user_unplayed_runs.count) %>!
               </h4>
-              <p class="text-sm mb-3" style="color: var(--color-success-dark, #065f46);">
+              <p class="alert-unplayed-runs-text text-sm mb-3">
                 Resume playing to compete for the prize
               </p>
               <%= link_to "Play Now", game_run_path(@user_unplayed_runs.first), class: "btn btn-primary btn-full" %>

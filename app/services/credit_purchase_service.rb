@@ -139,10 +139,14 @@ class CreditPurchaseService
 
     @checkout_link = invoice_data[:checkout_link]
   rescue BtcPayServerClient::Error => e
-    @errors << e.message
+    # Log full error for debugging but show generic message to user
+    Rails.logger.error("BTCPay configuration error: #{e.message}")
+    @errors << "Payment system configuration error. Please contact support."
     raise ActiveRecord::Rollback
   rescue BtcPayServerClient::ApiError => e
-    @errors << "Payment provider error: #{e.message}"
+    # Log full API error for debugging but sanitize message for user
+    Rails.logger.error("BTCPay API error: #{e.message}")
+    @errors << "Unable to process payment. Please try again or contact support."
     raise ActiveRecord::Rollback
   end
 end
