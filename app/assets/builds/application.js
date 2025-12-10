@@ -8706,8 +8706,10 @@ var number_sequence_game_controller_default = class extends Controller {
     // Completion title (changes based on rank)
     "rankMessage",
     // Rank message
-    "leaderboardList"
+    "leaderboardList",
     // Leaderboard container
+    "exitWarning"
+    // Exit warning modal
   ];
   static values = {
     gridLayout: Object,
@@ -8725,12 +8727,153 @@ var number_sequence_game_controller_default = class extends Controller {
     this.clickTimestamps = [];
     this.startTime = null;
     this.timerInterval = null;
+    this.gameStarted = false;
+    this.gameCompleted = false;
+    this.timerPaused = false;
+    this.pausedTime = null;
+    this.checkForAbandonment();
+    this.handleBeforeUnload = this.onBeforeUnload.bind(this);
+    this.handleKeyDown = this.onKeyDown.bind(this);
+    this.handlePopState = this.onPopState.bind(this);
+    this.handleTurboBeforeVisit = this.onTurboBeforeVisit.bind(this);
+    window.addEventListener("beforeunload", this.handleBeforeUnload);
+    window.addEventListener("keydown", this.handleKeyDown);
+    window.addEventListener("popstate", this.handlePopState);
+    document.addEventListener("turbo:before-visit", this.handleTurboBeforeVisit);
+    window.history.pushState({ gamePage: true }, "", window.location.href);
     this.showMemorizationPhase();
   }
   disconnect() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
+    window.removeEventListener("beforeunload", this.handleBeforeUnload);
+    window.removeEventListener("keydown", this.handleKeyDown);
+    window.removeEventListener("popstate", this.handlePopState);
+    document.removeEventListener("turbo:before-visit", this.handleTurboBeforeVisit);
+  }
+  // Check if game was previously abandoned
+  checkForAbandonment() {
+    const gameRunId = this.gameRunUrlValue.split("/").pop();
+    const abandonmentKey = `game_run_${gameRunId}_in_progress`;
+    if (localStorage.getItem(abandonmentKey) === "true") {
+      localStorage.removeItem(abandonmentKey);
+      this.autoForfeitAbandoned();
+    }
+  }
+  // Auto-forfeit a game that was abandoned
+  autoForfeitAbandoned() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch(`${this.gameRunUrlValue}/forfeit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+        "Accept": "application/json"
+      }
+    }).then(() => {
+      window.location.href = "/game_sessions/my_games?forfeited=true";
+    }).catch((error2) => {
+      console.error("Auto-forfeit error:", error2);
+      window.location.href = "/game_sessions/my_games";
+    });
+  }
+  // Handle browser refresh/close/navigation - show browser's native warning
+  // This only fires for: browser refresh button, typing URL in address bar, closing tab
+  // All other navigation (clicking links) is handled by onTurboBeforeVisit
+  onBeforeUnload(event) {
+    if (this.gameStarted && !this.gameCompleted) {
+      const gameRunId = this.gameRunUrlValue.split("/").pop();
+      localStorage.setItem(`game_run_${gameRunId}_in_progress`, "true");
+      event.preventDefault();
+      event.returnValue = "Game in progress. If you leave, your game will be forfeited.";
+      return "Game in progress. If you leave, your game will be forfeited.";
+    }
+  }
+  // Handle keyboard shortcuts that might cause navigation
+  onKeyDown(event) {
+    if (this.gameStarted && !this.gameCompleted) {
+      if ((event.ctrlKey || event.metaKey) && event.key === "r") {
+        event.preventDefault();
+        this.pauseTimer();
+        this.showExitWarning();
+      }
+      if (event.key === "F5") {
+        event.preventDefault();
+        this.pauseTimer();
+        this.showExitWarning();
+      }
+    }
+  }
+  // Handle back button
+  onPopState() {
+    if (this.gameStarted && !this.gameCompleted) {
+      window.history.pushState({ gamePage: true }, "", window.location.href);
+      this.pauseTimer();
+      this.showExitWarning();
+    }
+  }
+  // Handle Turbo Drive navigation (Rails 8 default for link clicks)
+  // This catches: clicking links (logout, navigation, etc.), form submissions
+  onTurboBeforeVisit(event) {
+    if (this.gameStarted && !this.gameCompleted) {
+      event.preventDefault();
+      this.pauseTimer();
+      this.showExitWarning();
+    }
+  }
+  // Pause the game timer
+  pauseTimer() {
+    if (this.timerInterval && !this.timerPaused) {
+      clearInterval(this.timerInterval);
+      this.pausedTime = performance.now() - this.startTime;
+      this.timerPaused = true;
+    }
+  }
+  // Resume the game timer
+  resumeTimer() {
+    if (this.timerPaused) {
+      this.startTime = performance.now() - this.pausedTime;
+      this.startTimer();
+      this.timerPaused = false;
+    }
+  }
+  // Show exit warning modal
+  showExitWarning() {
+    this.exitWarningTarget.style.display = "flex";
+  }
+  // Hide exit warning modal
+  hideExitWarning() {
+    this.exitWarningTarget.style.display = "none";
+  }
+  // Handle cancel button - resume game
+  cancelExit() {
+    this.hideExitWarning();
+    this.resumeTimer();
+  }
+  // Handle exit button - forfeit game
+  forfeitGame() {
+    this.gameCompleted = true;
+    const gameRunId = this.gameRunUrlValue.split("/").pop();
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch(`${this.gameRunUrlValue}/forfeit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+        "Accept": "application/json"
+      }
+    }).then((response) => {
+      if (response.ok) {
+        window.location.href = "/game_sessions/my_games";
+      } else {
+        window.location.href = "/game_sessions/my_games";
+      }
+    }).catch((error2) => {
+      console.error("Forfeit error:", error2);
+      window.location.href = "/game_sessions/my_games";
+    });
   }
   // Phase 1: Show sequence instructions for 3 seconds
   showMemorizationPhase() {
@@ -8749,6 +8892,7 @@ var number_sequence_game_controller_default = class extends Controller {
   startGame() {
     this.instructionsTarget.style.display = "none";
     this.gameInterfaceTarget.style.display = "block";
+    this.gameStarted = true;
     this.renderGrid();
     this.startTime = performance.now();
     this.startTimer();
@@ -8826,13 +8970,19 @@ var number_sequence_game_controller_default = class extends Controller {
   // Handle game timeout (>10 minutes)
   timeoutGame() {
     clearInterval(this.timerInterval);
-    alert("Time limit exceeded (10 minutes). Game will be scored as 0.");
+    this.gameCompleted = true;
+    const gameRunId = this.gameRunUrlValue.split("/").pop();
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`);
+    alert("Time limit exceeded (10 minutes). Game will be scored as 1,999,999ms.");
     const timeTaken = 600.1;
     this.submitScore(timeTaken);
   }
   // Game complete (all 25 numbers clicked)
   completeGame() {
     clearInterval(this.timerInterval);
+    this.gameCompleted = true;
+    const gameRunId = this.gameRunUrlValue.split("/").pop();
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`);
     const timeTaken = (performance.now() - this.startTime) / 1e3;
     this.showCompletionScreen(timeTaken);
   }

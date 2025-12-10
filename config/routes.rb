@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   resources :game_runs, only: [:show] do
     member do
       post :complete
+      post :forfeit
     end
   end
 

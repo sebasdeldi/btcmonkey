@@ -11,9 +11,9 @@
 #
 class GameRunsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_game_run, only: [:show, :complete]
-  before_action :verify_ownership, only: [:show, :complete]
-  before_action :verify_not_played, only: [:complete]
+  before_action :set_game_run, only: [:show, :complete, :forfeit]
+  before_action :verify_ownership, only: [:show, :complete, :forfeit]
+  before_action :verify_not_played, only: [:complete, :forfeit]
   before_action :verify_within_window, only: [:show, :complete]
 
   # GET /game_runs/:id
@@ -113,6 +113,42 @@ class GameRunsController < ApplicationController
     Rails.logger.error("Game completion error: #{e.message}\n#{e.backtrace.join("\n")}")
     flash[:alert] = "An error occurred. Please try again."
     redirect_to game_run_path(@game_run)
+  end
+
+  # POST /game_runs/:id/forfeit
+  #
+  # Marks a game run as forfeited with a maximum penalty score.
+  # This is triggered when a user attempts to refresh or navigate away during gameplay.
+  #
+  # @return [void]
+  def forfeit
+    # Score of 1,999,999ms as specified (maximum penalty for forfeited games)
+    forfeit_score = 1_999_999
+
+    # Prepare metadata for audit trail
+    metadata = {
+      forfeited: true,
+      reason: "User attempted to refresh or navigate away during game",
+      forfeited_at: Time.current.iso8601
+    }
+
+    # Save game run with forfeit score
+    @game_run.play!(forfeit_score, metadata)
+
+    # Log the forfeit for monitoring
+    Rails.logger.info("Game run #{@game_run.id} forfeited by user #{current_user.id}")
+
+    # Respond based on request format
+    respond_to do |format|
+      format.json { head :ok }
+      format.html { redirect_to my_games_game_sessions_path }
+    end
+  rescue StandardError => e
+    Rails.logger.error("Game forfeit error: #{e.message}\n#{e.backtrace.join("\n")}")
+    respond_to do |format|
+      format.json { head :internal_server_error }
+      format.html { redirect_to my_games_game_sessions_path, alert: "Error forfeiting game" }
+    end
   end
 
   private

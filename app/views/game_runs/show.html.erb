@@ -34,6 +34,32 @@
            data-number-sequence-game-current-username-value="<%= current_user.username %>"
            data-number-sequence-game-leaderboard-value="<%= @leaderboard.to_json %>">
 
+        <!-- Exit Warning Modal -->
+        <div data-number-sequence-game-target="exitWarning" class="exit-warning-modal">
+          <div class="exit-warning-content">
+            <h2 class="exit-warning-title">⚠️ Warning: Exit Game?</h2>
+            <p class="exit-warning-text">
+              If you close or refresh this window, the game will be marked as <strong>failed</strong> with a score of <strong>1,999,999ms</strong> and <strong>cannot be retried</strong>.
+            </p>
+            <p class="exit-warning-subtext">
+              Your progress will be lost and the spot will be forfeited.
+            </p>
+            <div class="exit-warning-actions">
+              <button type="button"
+                      class="btn btn-secondary"
+                      data-action="click->number-sequence-game#cancelExit">
+                Cancel - Resume Game
+              </button>
+              <button type="button"
+                      class="btn btn-ghost"
+                      style="background-color: var(--color-error); color: white;"
+                      data-action="click->number-sequence-game#forfeitGame">
+                Exit - Forfeit Game
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Memorization Phase -->
         <div data-number-sequence-game-target="instructions" class="memorization-phase">
           <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-4);">Get Ready!</h2>

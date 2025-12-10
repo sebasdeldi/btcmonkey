@@ -44,12 +44,12 @@ class NumberSequenceGameService
   # This provides precise competitive scoring where every millisecond counts
   # - Minimum valid time: 10,000ms (10 seconds)
   # - Maximum valid time: 600,000ms (10 minutes)
-  # - Over 600 seconds: returns max penalty score (600,000)
+  # - Over 600 seconds: returns penalty score of 1,999,999ms
   def calculate_score(time_seconds)
     time_ms = (time_seconds * 1000).round
 
-    # Cap at max time if exceeded
-    return (MAX_VALID_TIME * 1000).to_i if time_seconds > MAX_VALID_TIME
+    # Return penalty score if time limit exceeded
+    return 1_999_999 if time_seconds > MAX_VALID_TIME
 
     # Return milliseconds as score
     time_ms

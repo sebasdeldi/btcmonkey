@@ -15,7 +15,8 @@ export default class extends Controller {
     "finalScore",     // Final score display
     "completionTitle", // Completion title (changes based on rank)
     "rankMessage",    // Rank message
-    "leaderboardList" // Leaderboard container
+    "leaderboardList", // Leaderboard container
+    "exitWarning"     // Exit warning modal
   ]
 
   static values = {
@@ -31,6 +32,28 @@ export default class extends Controller {
     this.clickTimestamps = []
     this.startTime = null
     this.timerInterval = null
+    this.gameStarted = false
+    this.gameCompleted = false
+    this.timerPaused = false
+    this.pausedTime = null
+
+    // Check if this game was abandoned (user refreshed/left previously)
+    this.checkForAbandonment()
+
+    // Bind event handlers for detecting navigation attempts
+    this.handleBeforeUnload = this.onBeforeUnload.bind(this)
+    this.handleKeyDown = this.onKeyDown.bind(this)
+    this.handlePopState = this.onPopState.bind(this)
+    this.handleTurboBeforeVisit = this.onTurboBeforeVisit.bind(this)
+
+    window.addEventListener('beforeunload', this.handleBeforeUnload)
+    window.addEventListener('keydown', this.handleKeyDown)
+    window.addEventListener('popstate', this.handlePopState)
+    // Turbo-specific: intercept Turbo Drive navigation
+    document.addEventListener('turbo:before-visit', this.handleTurboBeforeVisit)
+
+    // Add a history state to detect back button
+    window.history.pushState({ gamePage: true }, '', window.location.href)
 
     this.showMemorizationPhase()
   }
@@ -39,6 +62,174 @@ export default class extends Controller {
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
     }
+    window.removeEventListener('beforeunload', this.handleBeforeUnload)
+    window.removeEventListener('keydown', this.handleKeyDown)
+    window.removeEventListener('popstate', this.handlePopState)
+    document.removeEventListener('turbo:before-visit', this.handleTurboBeforeVisit)
+  }
+
+  // Check if game was previously abandoned
+  checkForAbandonment() {
+    const gameRunId = this.gameRunUrlValue.split('/').pop()
+    const abandonmentKey = `game_run_${gameRunId}_in_progress`
+
+    if (localStorage.getItem(abandonmentKey) === 'true') {
+      // User previously left this game in progress - auto-forfeit
+      localStorage.removeItem(abandonmentKey)
+      this.autoForfeitAbandoned()
+    }
+  }
+
+  // Auto-forfeit a game that was abandoned
+  autoForfeitAbandoned() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content
+
+    fetch(`${this.gameRunUrlValue}/forfeit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      }
+    })
+    .then(() => {
+      // Redirect to My Games with a message
+      window.location.href = '/game_sessions/my_games?forfeited=true'
+    })
+    .catch(error => {
+      console.error('Auto-forfeit error:', error)
+      window.location.href = '/game_sessions/my_games'
+    })
+  }
+
+  // Handle browser refresh/close/navigation - show browser's native warning
+  // This only fires for: browser refresh button, typing URL in address bar, closing tab
+  // All other navigation (clicking links) is handled by onTurboBeforeVisit
+  onBeforeUnload(event) {
+    // Only show warning if game has started but not completed
+    if (this.gameStarted && !this.gameCompleted) {
+      // Mark game as in-progress in localStorage for auto-forfeit on page reload
+      const gameRunId = this.gameRunUrlValue.split('/').pop()
+      localStorage.setItem(`game_run_${gameRunId}_in_progress`, 'true')
+
+      // This will trigger the browser's native "Leave site?" dialog
+      // Note: Modern browsers don't allow custom messages, but the event still prevents navigation
+      event.preventDefault()
+      event.returnValue = 'Game in progress. If you leave, your game will be forfeited.'
+      return 'Game in progress. If you leave, your game will be forfeited.'
+    }
+  }
+
+  // Handle keyboard shortcuts that might cause navigation
+  onKeyDown(event) {
+    if (this.gameStarted && !this.gameCompleted) {
+      // Detect refresh attempts (Ctrl+R, Cmd+R, F5)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
+        event.preventDefault()
+        this.pauseTimer()
+        this.showExitWarning()
+      }
+      // Detect F5
+      if (event.key === 'F5') {
+        event.preventDefault()
+        this.pauseTimer()
+        this.showExitWarning()
+      }
+    }
+  }
+
+  // Handle back button
+  onPopState() {
+    if (this.gameStarted && !this.gameCompleted) {
+      // Push state again to keep them on the page
+      window.history.pushState({ gamePage: true }, '', window.location.href)
+
+      // Show warning modal
+      this.pauseTimer()
+      this.showExitWarning()
+    }
+  }
+
+  // Handle Turbo Drive navigation (Rails 8 default for link clicks)
+  // This catches: clicking links (logout, navigation, etc.), form submissions
+  onTurboBeforeVisit(event) {
+    if (this.gameStarted && !this.gameCompleted) {
+      // Prevent Turbo navigation entirely
+      event.preventDefault()
+
+      // Pause timer and show custom warning modal
+      this.pauseTimer()
+      this.showExitWarning()
+    }
+  }
+
+  // Pause the game timer
+  pauseTimer() {
+    if (this.timerInterval && !this.timerPaused) {
+      clearInterval(this.timerInterval)
+      this.pausedTime = performance.now() - this.startTime
+      this.timerPaused = true
+    }
+  }
+
+  // Resume the game timer
+  resumeTimer() {
+    if (this.timerPaused) {
+      this.startTime = performance.now() - this.pausedTime
+      this.startTimer()
+      this.timerPaused = false
+    }
+  }
+
+  // Show exit warning modal
+  showExitWarning() {
+    this.exitWarningTarget.style.display = 'flex'
+  }
+
+  // Hide exit warning modal
+  hideExitWarning() {
+    this.exitWarningTarget.style.display = 'none'
+  }
+
+  // Handle cancel button - resume game
+  cancelExit() {
+    this.hideExitWarning()
+    this.resumeTimer()
+  }
+
+  // Handle exit button - forfeit game
+  forfeitGame() {
+    this.gameCompleted = true // Prevent beforeunload from triggering again
+
+    // Clear abandonment flag since user is explicitly forfeiting
+    const gameRunId = this.gameRunUrlValue.split('/').pop()
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`)
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content
+
+    // Send forfeit request
+    fetch(`${this.gameRunUrlValue}/forfeit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        // Successful forfeit - redirect to My Games
+        window.location.href = '/game_sessions/my_games'
+      } else {
+        // Error - still redirect but user will see flash message
+        window.location.href = '/game_sessions/my_games'
+      }
+    })
+    .catch(error => {
+      console.error('Forfeit error:', error)
+      // On error, still redirect to My Games
+      window.location.href = '/game_sessions/my_games'
+    })
   }
 
   // Phase 1: Show sequence instructions for 3 seconds
@@ -62,6 +253,9 @@ export default class extends Controller {
     // Hide instructions, show game interface
     this.instructionsTarget.style.display = 'none'
     this.gameInterfaceTarget.style.display = 'block'
+
+    // Mark game as started
+    this.gameStarted = true
 
     // Render grid with numbers
     this.renderGrid()
@@ -172,16 +366,27 @@ export default class extends Controller {
   // Handle game timeout (>10 minutes)
   timeoutGame() {
     clearInterval(this.timerInterval)
-    alert('Time limit exceeded (10 minutes). Game will be scored as 0.')
+    this.gameCompleted = true // Prevent exit warnings after timeout
+
+    // Clear abandonment flag since game is being submitted
+    const gameRunId = this.gameRunUrlValue.split('/').pop()
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`)
+
+    alert('Time limit exceeded (10 minutes). Game will be scored as 1,999,999ms.')
 
     // Submit with timeout time
-    const timeTaken = 600.1 // Just over limit
+    const timeTaken = 600.1 // Just over limit (will be scored as 1,999,999ms by server)
     this.submitScore(timeTaken)
   }
 
   // Game complete (all 25 numbers clicked)
   completeGame() {
     clearInterval(this.timerInterval)
+    this.gameCompleted = true // Mark as completed to prevent exit warning
+
+    // Clear abandonment flag since game is completing normally
+    const gameRunId = this.gameRunUrlValue.split('/').pop()
+    localStorage.removeItem(`game_run_${gameRunId}_in_progress`)
 
     const timeTaken = (performance.now() - this.startTime) / 1000
 
