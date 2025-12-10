@@ -49,7 +49,6 @@ class SpotsController < ApplicationController
       spot_purchase = service.spot_purchase
       first_run = spot_purchase.game_runs.first
 
-      flash[:notice] = "Purchased #{quantity} spot(s)! Let's play!"
       redirect_to game_run_path(first_run)
     else
       flash[:alert] = service.errors.join(", ")

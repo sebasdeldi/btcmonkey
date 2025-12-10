@@ -1,10 +1,22 @@
 
 <% if game_session.spot_purchases.any? %>
   <div class="space-y-2">
-    <% game_session.participants.each do |participant| %>
+    <% game_session.participants.uniq.each do |participant| %>
+      <% best_score = @participant_best_scores&.[](participant.id) %>
+      <% spot_count = @participant_spot_counts&.[](participant.id) || 0 %>
       <div class="flex items-center justify-between py-2 px-4 bg-gray-50 rounded">
-        <div>
-          <span class="text-gray-600 ml-2">@<%= participant.username %></span>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-600">@<%= participant.username %></span>
+          <% if spot_count > 1 %>
+            <span class="badge badge-gray">
+              <%= spot_count %> spots
+            </span>
+          <% end %>
+          <% if best_score.present? %>
+            <span class="badge badge-primary">
+              <%= best_score %>ms
+            </span>
+          <% end %>
         </div>
       </div>
     <% end %>

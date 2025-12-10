@@ -93,6 +93,35 @@
   margin-top: var(--space-2);
 }
 
+/* Best Score Box - Blue variant */
+.best-score-box {
+  background-color: var(--color-primary-blue-light, #eff6ff);
+  border: 1px solid var(--color-primary-blue);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.best-score-box-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-blue);
+  margin-bottom: var(--space-2);
+}
+
+.best-score-box-score {
+  font-size: 3rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-navy);
+  line-height: 1;
+}
+
+.best-score-box-time {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-top: var(--space-1);
+}
+
 /* Utility classes for common layouts */
 .flex-between {
   display: flex;

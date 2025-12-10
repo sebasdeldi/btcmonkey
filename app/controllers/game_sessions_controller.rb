@@ -58,12 +58,53 @@ class GameSessionsController < ApplicationController
   #
   # GET /game_sessions/:id
   def show
-    @game_session = GameSession.includes(spot_purchases: :user).find(params[:id])
+    @game_session = GameSession.includes(spot_purchases: :user, game_runs: :user).find(params[:id])
     @user_has_purchased = current_user.spot_purchases.exists?(game_session_id: @game_session.id)
     @user_unplayed_runs = @game_session.game_runs.where(user: current_user).unplayed
+
+    # Get current user's best score if they've played any runs
+    user_played_runs = @game_session.game_runs.where(user: current_user).played
+    @user_best_score = user_played_runs.minimum(:score) if user_played_runs.any?
+
+    # Compute best scores for all participants to avoid N+1 queries
+    @participant_best_scores = compute_participant_best_scores(@game_session)
+
+    # Compute spot counts per participant to avoid N+1 queries
+    @participant_spot_counts = compute_participant_spot_counts(@game_session)
   end
 
   private
+
+  # Compute best scores for all participants in a game session.
+  #
+  # @param game_session [GameSession] the game session to analyze
+  # @return [Hash] hash with user_id as key, best score as value
+  def compute_participant_best_scores(game_session)
+    best_scores = {}
+
+    # Group game runs by user and find minimum score for each (lower is better)
+    game_session.game_runs.played.group_by(&:user_id).each do |user_id, runs|
+      scores = runs.map(&:score).compact
+      best_scores[user_id] = scores.min if scores.any?
+    end
+
+    best_scores
+  end
+
+  # Compute spot purchase counts per participant.
+  #
+  # @param game_session [GameSession] the game session to analyze
+  # @return [Hash] hash with user_id as key, spot count as value
+  def compute_participant_spot_counts(game_session)
+    spot_counts = {}
+
+    # Count spot purchases per user
+    game_session.spot_purchases.group_by(&:user_id).each do |user_id, purchases|
+      spot_counts[user_id] = purchases.count
+    end
+
+    spot_counts
+  end
 
   # Compute game run statistics for all sessions to avoid N+1 queries.
   #

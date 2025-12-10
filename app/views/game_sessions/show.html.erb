@@ -63,6 +63,17 @@
             <%= current_user.user_credit_wallet&.total_credits || 0 %>
           </p>
 
+          <%# User's Best Score %>
+          <% if @user_best_score.present? %>
+            <div class="best-score-box">
+              <h4 class="best-score-box-title">Your Best Score</h4>
+              <p class="best-score-box-score"><%= @user_best_score %>ms</p>
+              <p class="best-score-box-time">
+                <%= ((@user_best_score / 1000.0).round(1)) %>s
+              </p>
+            </div>
+          <% end %>
+
           <%# Unplayed Runs Section %>
           <% if @user_unplayed_runs.any? %>
             <div class="alert-unplayed-runs">
