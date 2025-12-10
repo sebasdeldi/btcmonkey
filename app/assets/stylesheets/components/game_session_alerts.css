@@ -1,0 +1,106 @@
+/* Game Session Alert Components */
+
+/* Unplayed Runs Alert - Success/Info variant */
+.alert-unplayed-runs {
+  background-color: var(--color-success-light);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.alert-unplayed-runs-title {
+  color: var(--color-success-dark);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.alert-unplayed-runs-text {
+  color: var(--color-success-dark);
+}
+
+/* User Spot Info Box - Primary blue variant */
+.info-box-spot {
+  background-color: var(--color-primary-blue-light, #eff6ff);
+  border: 1px solid var(--color-primary-blue);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.info-box-spot-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-blue);
+  margin-bottom: var(--space-1);
+}
+
+.info-box-spot-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-box-spot-number {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.info-box-spot-time {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+/* Game Runs Status Box - Gray variant */
+.status-box-runs {
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.status-box-runs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-box-runs-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.status-box-runs-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+.status-box-runs-best-score {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+/* Time Warning Text - Warning variant */
+.warning-text-time {
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+}
+
+/* Time Error Text - Error variant */
+.error-text-time {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+}
+
+/* Utility classes for common layouts */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-items-center {
+  display: flex;
+  align-items: center;
+}

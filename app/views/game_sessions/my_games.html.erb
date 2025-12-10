@@ -46,41 +46,37 @@
 
               <div class="game-session-body">
                 <%# User's spot info %>
-                <div class="mb-4 p-3 bg-blue-50 rounded">
-                  <p class="text-sm font-semibold text-primary-blue mb-1">Your Spot</p>
-                  <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold">#<%= user_spot.spot_number %></span>
-                    <span class="text-sm text-gray-600">
+                <div class="info-box-spot">
+                  <p class="info-box-spot-title">Your Spot</p>
+                  <div class="info-box-spot-content">
+                    <span class="info-box-spot-number">#<%= user_spot.spot_number %></span>
+                    <span class="info-box-spot-time">
                       <%= time_ago_in_words(user_spot.created_at) %> ago
                     </span>
                   </div>
                 </div>
 
-                <%# Game Runs Status %>
-                <% user_runs = session.game_runs.where(user: current_user) %>
-                <% if user_runs.any? %>
-                  <% unplayed_count = user_runs.unplayed.count %>
-                  <% played_count = user_runs.played.count %>
-
-                  <div class="mb-4 p-4 rounded" style="background-color: var(--color-gray-50);">
-                    <div class="flex items-center justify-between">
+                <%# Game Runs Status - Using precomputed stats to avoid N+1 queries %>
+                <% stats = @game_run_stats[session.id] %>
+                <% if stats && stats[:total_count] > 0 %>
+                  <div class="status-box-runs">
+                    <div class="status-box-runs-header">
                       <div>
-                        <p class="font-semibold">Your Runs: <%= user_runs.count %></p>
-                        <p class="text-sm" style="color: var(--color-gray-600);">
-                          <%= played_count %> played • <%= unplayed_count %> remaining
+                        <p class="status-box-runs-title">Your Runs: <%= stats[:total_count] %></p>
+                        <p class="status-box-runs-subtitle">
+                          <%= stats[:played_count] %> played • <%= stats[:unplayed_count] %> remaining
                         </p>
 
-                        <% if played_count > 0 %>
-                          <p class="text-sm" style="color: var(--color-gray-600);">
-                            Best score: <%= user_runs.played.maximum(:score) || 0 %>
+                        <% if stats[:played_count] > 0 && stats[:best_score] %>
+                          <p class="status-box-runs-best-score">
+                            Best score: <%= stats[:best_score] %>ms
                           </p>
                         <% end %>
                       </div>
 
                       <div>
-                        <% if unplayed_count > 0 %>
-                          <% next_run = user_runs.unplayed.first %>
-                          <%= link_to "Play Now", game_run_path(next_run), class: "btn btn-primary" %>
+                        <% if stats[:unplayed_count] > 0 && stats[:next_run] %>
+                          <%= link_to "Play Now", game_run_path(stats[:next_run]), class: "btn btn-primary" %>
                         <% else %>
                           <span class="badge badge-success">All Complete</span>
                         <% end %>
@@ -88,15 +84,15 @@
                     </div>
 
                     <%# Time warning %>
-                    <% if session.last_spot_purchased_at.present? && unplayed_count > 0 %>
+                    <% if session.last_spot_purchased_at.present? && stats[:unplayed_count] > 0 %>
                       <% deadline = session.last_spot_purchased_at + 2.hours %>
                       <% time_left = deadline - Time.current %>
                       <% if time_left > 0 %>
-                        <p class="text-sm mt-2" style="color: var(--color-warning);">
+                        <p class="warning-text-time">
                           ⏱️ <%= distance_of_time_in_words(time_left) %> left to play
                         </p>
                       <% else %>
-                        <p class="text-sm mt-2" style="color: var(--color-error);">
+                        <p class="error-text-time">
                           ⏱️ Play window expired - runs will be forfeited
                         </p>
                       <% end %>

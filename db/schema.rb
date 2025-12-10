@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_09_171621) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
     t.index ["credit_package_id"], name: "index_btc_transactions_on_credit_package_id"
     t.index ["invoice_id"], name: "index_btc_transactions_on_invoice_id", unique: true
     t.index ["status"], name: "index_btc_transactions_on_status"
+    t.index ["user_id", "status", "created_at"], name: "index_btc_transactions_on_user_status_and_date", comment: "Optimize user transaction history queries"
     t.index ["user_id"], name: "index_btc_transactions_on_user_id"
   end
 
@@ -49,6 +50,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
     t.index ["source_type", "source_id"], name: "index_credit_ledger_entries_on_source"
     t.index ["user_id", "balance_after"], name: "index_credit_ledger_entries_on_user_id_and_balance_after"
     t.index ["user_id", "created_at"], name: "index_credit_ledger_entries_on_user_id_and_created_at"
+    t.index ["user_id", "created_at"], name: "index_credit_ledger_on_user_and_date", comment: "Optimize chronological ledger queries per user"
     t.index ["user_id"], name: "index_credit_ledger_entries_on_user_id"
   end
 
@@ -74,6 +76,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["completed_at"], name: "index_game_runs_on_completed_at"
+    t.index ["game_session_id", "score"], name: "index_game_runs_on_session_and_score", comment: "Optimize leaderboard queries ordering by score"
+    t.index ["game_session_id", "user_id", "completed_at"], name: "index_game_runs_on_session_user_and_completed", comment: "Optimize game run lookups by session and user with completion check"
     t.index ["game_session_id", "user_id"], name: "index_game_runs_on_game_session_id_and_user_id"
     t.index ["game_session_id"], name: "index_game_runs_on_game_session_id"
     t.index ["seed"], name: "index_game_runs_on_seed", unique: true
@@ -102,6 +106,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
     t.index ["finished_at"], name: "index_game_sessions_on_finished_at"
     t.index ["game_session_type"], name: "index_game_sessions_on_game_session_type"
     t.index ["started_at"], name: "index_game_sessions_on_started_at"
+    t.index ["status", "started_at"], name: "index_game_sessions_on_status_and_started_at", comment: "Optimize filtering sessions by status and sorting by date"
     t.index ["status"], name: "index_game_sessions_on_status"
     t.index ["winner_id"], name: "index_game_sessions_on_winner_id"
   end
@@ -116,6 +121,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_08_000004) do
     t.integer "quantity", default: 1, null: false
     t.index ["created_at"], name: "index_spot_purchases_on_created_at"
     t.index ["game_session_id", "spot_number"], name: "index_spot_purchases_on_session_and_number", unique: true
+    t.index ["game_session_id", "user_id"], name: "index_spot_purchases_on_session_and_user", comment: "Optimize user spot purchase lookups per session"
     t.index ["game_session_id"], name: "index_spot_purchases_on_game_session_id"
     t.index ["user_id"], name: "index_spot_purchases_on_user_id"
   end

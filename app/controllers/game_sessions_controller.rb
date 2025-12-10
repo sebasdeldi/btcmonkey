@@ -28,7 +28,7 @@ class GameSessionsController < ApplicationController
   # Display user's active game sessions they're participating in.
   #
   # Shows both active and full sessions (not finished yet), with the
-  # user's spot purchase details.
+  # user's spot purchase details and game runs preloaded to avoid N+1 queries.
   #
   # @return [void] renders the my_games view with @my_sessions
   #
@@ -37,8 +37,12 @@ class GameSessionsController < ApplicationController
     @my_sessions = GameSession.joins(:spot_purchases)
                                .where(spot_purchases: { user_id: current_user.id })
                                .where.not(status: :finished)
-                               .includes(spot_purchases: :user)
+                               .distinct
+                               .includes(:spot_purchases, game_runs: :user)
                                .order(started_at: :desc)
+
+    # Precompute game run statistics to avoid N+1 queries in the view
+    @game_run_stats = compute_game_run_stats(@my_sessions, current_user)
   end
 
   # Display game session details and spot purchase status.
@@ -57,5 +61,32 @@ class GameSessionsController < ApplicationController
     @game_session = GameSession.includes(spot_purchases: :user).find(params[:id])
     @user_has_purchased = current_user.spot_purchases.exists?(game_session_id: @game_session.id)
     @user_unplayed_runs = @game_session.game_runs.where(user: current_user).unplayed
+  end
+
+  private
+
+  # Compute game run statistics for all sessions to avoid N+1 queries.
+  #
+  # @param sessions [ActiveRecord::Relation<GameSession>] sessions to analyze
+  # @param user [User] the current user
+  # @return [Hash] hash with session_id as key, stats as value
+  def compute_game_run_stats(sessions, user)
+    stats = {}
+
+    sessions.each do |session|
+      user_runs = session.game_runs.select { |run| run.user_id == user.id }
+      unplayed_runs = user_runs.select { |run| run.completed_at.nil? }
+      played_runs = user_runs.select { |run| run.completed_at.present? }
+
+      stats[session.id] = {
+        total_count: user_runs.count,
+        unplayed_count: unplayed_runs.count,
+        played_count: played_runs.count,
+        best_score: played_runs.map(&:score).compact.min, # lower is better
+        next_run: unplayed_runs.first
+      }
+    end
+
+    stats
   end
 end
