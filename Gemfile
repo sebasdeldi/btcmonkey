@@ -64,7 +64,7 @@ end
 
 gem "devise", "~> 4.9"
 
-gem "sidekiq", "~> 8.0"
+gem "sidekiq", "~> 8.1"
 
 # Gemfile
 gem "dotenv-rails", groups: [ :development, :test ]
